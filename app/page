@@ -1,0 +1,135 @@
+'use client';
+import React, { useState } from 'react';
+import Link from 'next/link';
+
+export default function AdminPortal() {
+  const [formData, setFormData] = useState({
+    name: '',
+    nationalId: '',
+    password: '',
+    role: '',
+    month: 'آبان ۱۴۰۳',
+    baseSalary: 15000000,
+    workedDays: 30,
+    overtimeHours: 0,
+    housingAllowance: 900000,
+    foodAllowance: 1400000,
+    deductions: 0
+  });
+
+  const [status, setStatus] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setStatus('✅ فیش حقوقی و رمز عبور کارمند با موفقیت ثبت شد.');
+    setTimeout(() => setStatus(''), 4000);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100 p-6 font-sans dir-rtl" dir="rtl">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-slate-800">پنل حسابدار - صدور فیش حقوقی</h1>
+          <Link href="/" className="text-sm bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-300 transition">
+            ← بازگشت به صفحه اصلی
+          </Link>
+        </div>
+
+        {status && (
+          <div className="bg-emerald-100 text-emerald-800 p-4 rounded-xl mb-4 font-bold border border-emerald-300">
+            {status}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-md space-y-4 border">
+          <h2 className="font-bold text-slate-700 border-b pb-2 text-lg">اطلاعات کارمند و حقوق</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">نام و نام خانوادگی</label>
+              <input 
+                type="text" 
+                required 
+                value={formData.name} 
+                onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                className="w-full border p-2 rounded outline-none focus:border-blue-600" 
+                placeholder="علی محمدی"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">کد ملی (نام کاربری)</label>
+              <input 
+                type="text" 
+                required 
+                value={formData.nationalId} 
+                onChange={(e) => setFormData({...formData, nationalId: e.target.value})} 
+                className="w-full border p-2 rounded dir-ltr text-left outline-none focus:border-blue-600" 
+                placeholder="0012345678"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">کلمه عبور (پسورد کارمند)</label>
+              <input 
+                type="password" 
+                required 
+                value={formData.password} 
+                onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                className="w-full border p-2 rounded dir-ltr text-left outline-none focus:border-blue-600" 
+                placeholder="***"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">سمت / شغل</label>
+              <input 
+                type="text" 
+                required 
+                value={formData.role} 
+                onChange={(e) => setFormData({...formData, role: e.target.value})} 
+                className="w-full border p-2 rounded outline-none focus:border-blue-600" 
+                placeholder="برنامه‌نویس"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">حقوق پایه (تومان)</label>
+              <input 
+                type="number" 
+                value={formData.baseSalary} 
+                onChange={(e) => setFormData({...formData, baseSalary: Number(e.target.value)})} 
+                className="w-full border p-2 rounded outline-none focus:border-blue-600" 
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">روزهای کارکرد</label>
+              <input 
+                type="number" 
+                value={formData.workedDays} 
+                onChange={(e) => setFormData({...formData, workedDays: Number(e.target.value)})} 
+                className="w-full border p-2 rounded outline-none focus:border-blue-600" 
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">ساعات اضافه کار</label>
+              <input 
+                type="number" 
+                value={formData.overtimeHours} 
+                onChange={(e) => setFormData({...formData, overtimeHours: Number(e.target.value)})} 
+                className="w-full border p-2 rounded outline-none focus:border-blue-600" 
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition mt-4">
+            ثبت و صدور فیش حقوقی 📑
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
