@@ -1,11 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/admin/reports/page": "app/admin/reports/page.js",
-  "/admin/corrections/page": "app/admin/corrections/page.js",
   "/admin/employees/page": "app/admin/employees/page.js",
   "/admin/payslips/page": "app/admin/payslips/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/admin/settings/page": "app/admin/settings/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/page": "app/page.js"
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/admin/corrections/page": "app/admin/corrections/page.js",
+  "/page": "app/page.js",
+  "/admin/page": "app/admin/page.js"
 }
