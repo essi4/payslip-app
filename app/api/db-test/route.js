@@ -1,12 +1,13 @@
 import pool from "@/app/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const result = await pool.query("SELECT NOW()");
 
     return Response.json({
       success: true,
-      message: "اتصال به دیتابیس موفق بود",
       time: result.rows[0],
     });
   } catch (error) {
@@ -15,7 +16,7 @@ export async function GET() {
     return Response.json(
       {
         success: false,
-        message: "اتصال به دیتابیس برقرار نشد",
+        error: error.message,
       },
       { status: 500 }
     );
