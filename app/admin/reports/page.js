@@ -1,210 +1,521 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ReportsPage() {
-  const [month, setMonth] = useState("مرداد 1405");
+  const [loading, setLoading] = useState(true);
+  const [report, setReport] = useState(null);
 
-  const employees = [
-    {
-      id: 1,
-      name: "علی علوی",
-      nationalId: "1234567890",
-      baseSalary: 70000000,
-      benefits: 10000000,
-      deductions: 5000000,
-      netSalary: 75000000,
-    },
-    {
-      id: 2,
-      name: "محمد رضایی",
-      nationalId: "9876543210",
-      baseSalary: 60000000,
-      benefits: 8000000,
-      deductions: 4000000,
-      netSalary: 64000000,
-    },
-  ];
+  const [year, setYear] = useState("");
+  const [month, setMonth] = useState("");
 
-  const totalNetSalary = employees.reduce(
-    (total, employee) => total + employee.netSalary,
-    0
-  );
+  const months = [
+    "فروردین",
+    "اردیبهشت",
+    "خرداد",
+    "تیر",
+    "مرداد",
+    "شهریور",
+    "مهر",
+    "آبان",
+    "آذر",
+    "دی",
+    "بهمن",
+    "اسفند",
+  ];
 
-  const totalBaseSalary = employees.reduce(
-    (total, employee) => total + employee.baseSalary,
-    0
-  );
+  async function loadReports() {
+    try {
+      setLoading(true);
 
-  const totalBenefits = employees.reduce(
-    (total, employee) => total + employee.benefits,
-    0
-  );
+      let url = "/api/reports";
 
-  const totalDeductions = employees.reduce(
-    (total, employee) => total + employee.deductions,
-    0
-  );
+      const params = new URLSearchParams();
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-6" dir="rtl">
+      if (year) {
+        params.append("year", year);
+      }
 
-      {/* عنوان */}
+      if (month) {
+        params.append("month", month);
+      }
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
-          گزارش‌های حقوق و دستمزد
-        </h1>
+      if (params.toString()) {
+        url += "?" + params.toString();
+      }
 
-        <p className="mt-2 text-gray-500">
-          مشاهده خلاصه وضعیت حقوق و فیش‌های کارکنان
-        </p>
-      </div>
+      const response = await fetch(url, {
+        cache: "no-store",
+      });
 
-      {/* انتخاب ماه */}
+      const result = await response.json();
 
-      <div className="mb-6 rounded-xl bg-white p-5 shadow">
+      if (!result.success) {
+        alert(result.error || "خطا در دریافت گزارش");
+        return;
+      }
 
-        <label className="mb-2 block font-bold">
-          ماه گزارش
-        </label>
+      setReport(result.data);
+    } catch (error) {
+      console.error(error);
+      alert("خطا در اتصال به سرور");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-        <select
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-          className="rounded-lg border p-3"
-        >
-          <option>مرداد 1405</option>
-          <option>تیر 1405</option>
-          <option>خرداد 1405</option>
-          <option>اردیبهشت 1405</option>
-          <option>فروردین 1405</option>
-        </select>
+  useEffect(() => {
+    loadReports();
+  }, [year, month]);
 
-      </div>
+  function formatMoney(value) {
+    return Number(value || 0).toLocaleString("fa-IR");
+  }
 
-      {/* آمار */}
+  function printReport() {
+    window.print();
+  }
 
-      <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+  function resetFilters() {
+    setYear("");
+    setMonth("");
+  }
 
-        <div className="rounded-xl bg-white p-6 shadow">
-          <p className="text-gray-500">
-            تعداد کارکنان
-          </p>
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen bg-gray-100 p-10 text-center"
+        dir="rtl"
+      >
+        <div className="rounded-xl bg-white p-10 shadow">
+          <div className="text-4xl">📊</div>
 
-          <p className="mt-2 text-3xl font-bold text-blue-600">
-            {employees.length}
-          </p>
-        </div>
+          <h2 className="mt-4 text-xl font-bold">
+            در حال دریافت گزارش‌ها...
+          </h2>
 
-        <div className="rounded-xl bg-white p-6 shadow">
-          <p className="text-gray-500">
-            مجموع حقوق پایه
-          </p>
+          <p className="mt-2 text-gray-500">
+            لطفاً چند لحظه صبر کنید
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-          <p className="mt-2 text-2xl font-bold">
-            {totalBaseSalary.toLocaleString()}
-          </p>
-        </div>
+  if (!report) {
+    return (
+      <div
+        className="min-h-screen bg-gray-100 p-10 text-center"
+        dir="rtl"
+      >
+        <div className="rounded-xl bg-white p-10 shadow">
+          <h2 className="text-xl font-bold">
+            گزارشی دریافت نشد
+          </h2>
 
-        <div className="rounded-xl bg-white p-6 shadow">
-          <p className="text-gray-500">
-            مجموع مزایا
-          </p>
+          <button
+            onClick={loadReports}
+            className="mt-5 rounded-lg bg-blue-600 px-6 py-3 text-white"
+          >
+            تلاش مجدد
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-          <p className="mt-2 text-2xl font-bold text-green-600">
-            {totalBenefits.toLocaleString()}
-          </p>
-        </div>
+  const summary = report.summary || {};
+  const payslips = report.payslips || [];
+  const monthly = report.monthly || [];
 
-        <div className="rounded-xl bg-white p-6 shadow">
-          <p className="text-gray-500">
-            مجموع کسورات
-          </p>
+  return (
+    <div
+      className="min-h-screen bg-gray-100 p-6"
+      dir="rtl"
+    >
+      {/* HEADER */}
 
-          <p className="mt-2 text-2xl font-bold text-red-600">
-            {totalDeductions.toLocaleString()}
-          </p>
-        </div>
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">
+            📊 گزارش‌های حقوق و دستمزد
+          </h1>
 
-      </div>
+          <p className="mt-2 text-gray-500">
+            گزارش کامل فیش‌ها، حقوق، مزایا و کسورات
+          </p>
+        </div>
 
-      {/* حقوق خالص */}
+        <button
+          onClick={printReport}
+          className="rounded-lg bg-gray-800 px-6 py-3 text-white hover:bg-gray-900"
+        >
+          🖨 چاپ گزارش
+        </button>
+      </div>
 
-      <div className="mb-8 rounded-xl bg-green-50 p-6 shadow">
+      {/* FILTER */}
 
-        <p className="text-gray-600">
-          مجموع حقوق خالص - {month}
-        </p>
+      <div className="mb-8 rounded-xl bg-white p-6 shadow">
+        <h2 className="mb-5 text-xl font-bold">
+          🔎 فیلتر گزارش
+        </h2>
 
-        <p className="mt-2 text-4xl font-bold text-green-600">
-          {totalNetSalary.toLocaleString()}
-        </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <label className="mb-2 block font-medium">
+              سال
+            </label>
 
-      </div>
+            <input
+              type="text"
+              placeholder="مثلاً 1405"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="w-full rounded-lg border p-3"
+            />
+          </div>
 
-      {/* جدول */}
+          <div>
+            <label className="mb-2 block font-medium">
+              ماه
+            </label>
 
-      <div className="overflow-x-auto rounded-xl bg-white shadow">
+            <select
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="w-full rounded-lg border p-3"
+            >
+              <option value="">
+                همه ماه‌ها
+              </option>
 
-        <table className="w-full text-right">
+              {months.map((item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <thead className="bg-gray-100">
+          <div className="flex items-end">
+            <button
+              onClick={resetFilters}
+              className="w-full rounded-lg bg-gray-500 px-5 py-3 text-white hover:bg-gray-600"
+            >
+              پاک کردن فیلتر
+            </button>
+          </div>
+        </div>
+      </div>
 
-            <tr>
-              <th className="p-4">نام</th>
-              <th className="p-4">کد ملی</th>
-              <th className="p-4">حقوق پایه</th>
-              <th className="p-4">مزایا</th>
-              <th className="p-4">کسورات</th>
-              <th className="p-4">حقوق خالص</th>
-            </tr>
+      {/* STATISTICS */}
 
-          </thead>
+      <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-xl bg-white p-6 shadow">
+          <p className="text-gray-500">
+            👥 تعداد کارکنان
+          </p>
 
-          <tbody>
+          <h2 className="mt-2 text-3xl font-bold text-blue-600">
+            {formatMoney(summary.employeesCount)}
+          </h2>
+        </div>
 
-            {employees.map((employee) => (
+        <div className="rounded-xl bg-white p-6 shadow">
+          <p className="text-gray-500">
+            📄 تعداد فیش‌ها
+          </p>
 
-              <tr
-                key={employee.id}
-                className="border-t"
-              >
+          <h2 className="mt-2 text-3xl font-bold text-green-600">
+            {formatMoney(summary.payslipsCount)}
+          </h2>
+        </div>
 
-                <td className="p-4">
-                  {employee.name}
-                </td>
+        <div className="rounded-xl bg-white p-6 shadow">
+          <p className="text-gray-500">
+            💰 مجموع حقوق پایه
+          </p>
 
-                <td className="p-4">
-                  {employee.nationalId}
-                </td>
+          <h2 className="mt-2 text-2xl font-bold text-indigo-600">
+            {formatMoney(summary.totalBaseSalary)}
+          </h2>
 
-                <td className="p-4">
-                  {employee.baseSalary.toLocaleString()}
-                </td>
+          <span className="text-gray-500">
+            تومان
+          </span>
+        </div>
 
-                <td className="p-4">
-                  {employee.benefits.toLocaleString()}
-                </td>
+        <div className="rounded-xl bg-white p-6 shadow">
+          <p className="text-gray-500">
+            🎁 مجموع مزایا
+          </p>
 
-                <td className="p-4 text-red-600">
-                  {employee.deductions.toLocaleString()}
-                </td>
+          <h2 className="mt-2 text-2xl font-bold text-emerald-600">
+            {formatMoney(summary.totalBenefits)}
+          </h2>
 
-                <td className="p-4 font-bold text-green-600">
-                  {employee.netSalary.toLocaleString()}
-                </td>
+          <span className="text-gray-500">
+            تومان
+          </span>
+        </div>
 
-              </tr>
+        <div className="rounded-xl bg-white p-6 shadow">
+          <p className="text-gray-500">
+            ➖ مجموع کسورات
+          </p>
 
-            ))}
+          <h2 className="mt-2 text-2xl font-bold text-red-600">
+            {formatMoney(summary.totalDeductions)}
+          </h2>
 
-          </tbody>
+          <span className="text-gray-500">
+            تومان
+          </span>
+        </div>
 
-        </table>
+        <div className="rounded-xl bg-white p-6 shadow">
+          <p className="text-gray-500">
+            💵 مجموع خالص پرداختی
+          </p>
 
-      </div>
+          <h2 className="mt-2 text-2xl font-bold text-purple-600">
+            {formatMoney(summary.totalNetSalary)}
+          </h2>
 
-    </div>
-  );
+          <span className="text-gray-500">
+            تومان
+          </span>
+        </div>
+      </div>
+
+      {/* MONTHLY REPORT */}
+
+      <div className="mb-8 overflow-hidden rounded-xl bg-white shadow">
+        <div className="border-b p-6">
+          <h2 className="text-xl font-bold">
+            📅 گزارش دوره‌ای
+          </h2>
+
+          <p className="mt-1 text-gray-500">
+            خلاصه حقوق و پرداختی بر اساس دوره
+          </p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-right">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-4">سال</th>
+                <th className="p-4">ماه</th>
+                <th className="p-4">تعداد فیش</th>
+                <th className="p-4">حقوق پایه</th>
+                <th className="p-4">مزایا</th>
+                <th className="p-4">کسورات</th>
+                <th className="p-4">خالص پرداختی</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {monthly.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="7"
+                    className="p-8 text-center text-gray-500"
+                  >
+                    اطلاعاتی برای نمایش وجود ندارد.
+                  </td>
+                </tr>
+              ) : (
+                monthly.map((item, index) => (
+                  <tr
+                    key={`${item.year}-${item.month}-${index}`}
+                    className="border-t"
+                  >
+                    <td className="p-4">
+                      {item.year}
+                    </td>
+
+                    <td className="p-4 font-medium">
+                      {item.month}
+                    </td>
+
+                    <td className="p-4">
+                      {formatMoney(
+                        item.payslips_count
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      {formatMoney(
+                        item.base_salary
+                      )}{" "}
+                      تومان
+                    </td>
+
+                    <td className="p-4 text-green-600">
+                      {formatMoney(
+                        item.benefits
+                      )}{" "}
+                      تومان
+                    </td>
+
+                    <td className="p-4 text-red-600">
+                      {formatMoney(
+                        item.deductions
+                      )}{" "}
+                      تومان
+                    </td>
+
+                    <td className="p-4 font-bold text-purple-600">
+                      {formatMoney(
+                        item.net_salary
+                      )}{" "}
+                      تومان
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* PAYSLIPS */}
+
+      <div className="overflow-hidden rounded-xl bg-white shadow">
+        <div className="border-b p-6">
+          <h2 className="text-xl font-bold">
+            📄 جزئیات فیش‌ها
+          </h2>
+
+          <p className="mt-1 text-gray-500">
+            لیست فیش‌های موجود در گزارش
+          </p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-right">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-4">#</th>
+                <th className="p-4">کارمند</th>
+                <th className="p-4">کد پرسنلی</th>
+                <th className="p-4">دوره</th>
+                <th className="p-4">حقوق پایه</th>
+                <th className="p-4">مزایا</th>
+                <th className="p-4">کسورات</th>
+                <th className="p-4">خالص</th>
+                <th className="p-4">مشاهده</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {payslips.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="9"
+                    className="p-8 text-center text-gray-500"
+                  >
+                    فیشی برای نمایش وجود ندارد.
+                  </td>
+                </tr>
+              ) : (
+                payslips.map((item, index) => {
+                  const benefits =
+                    Number(item.overtime || 0) +
+                    Number(item.bonus || 0) +
+                    Number(
+                      item.housing_allowance || 0
+                    ) +
+                    Number(
+                      item.food_allowance || 0
+                    ) +
+                    Number(
+                      item.marriage_allowance || 0
+                    ) +
+                    Number(
+                      item.child_allowance || 0
+                    ) +
+                    Number(
+                      item.other_benefits || 0
+                    );
+
+                  const deductions =
+                    Number(item.insurance || 0) +
+                    Number(item.tax || 0) +
+                    Number(
+                      item.other_deductions || 0
+                    );
+
+                  return (
+                    <tr
+                      key={item.id}
+                      className="border-t hover:bg-gray-50"
+                    >
+                      <td className="p-4">
+                        {index + 1}
+                      </td>
+
+                      <td className="p-4 font-medium">
+                        {item.full_name || "نامشخص"}
+                      </td>
+
+                      <td className="p-4">
+                        {item.personnel_code || "---"}
+                      </td>
+
+                      <td className="p-4">
+                        {item.month} {item.year}
+                      </td>
+
+                      <td className="p-4">
+                        {formatMoney(
+                          item.base_salary
+                        )}{" "}
+                        تومان
+                      </td>
+
+                      <td className="p-4 text-green-600">
+                        {formatMoney(benefits)} تومان
+                      </td>
+
+                      <td className="p-4 text-red-600">
+                        {formatMoney(deductions)} تومان
+                      </td>
+
+                      <td className="p-4 font-bold text-purple-600">
+                        {formatMoney(
+                          item.net_salary
+                        )}{" "}
+                        تومان
+                      </td>
+
+                      <td className="p-4">
+                        <a
+                          href={`/admin/payslips/${item.id}`}
+                          className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                        >
+                          👁 مشاهده
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* FOOTER */}
+
+      <div className="mt-8 text-center text-sm text-gray-500">
+        سیستم حقوق و دستمزد — گزارش‌های مالی
+      </div>
+    </div>
+  );
 }

@@ -1,0 +1,561 @@
+/* =========================================
+   صفحه نمایش فیش
+========================================= */
+
+.payslip-page {
+  min-height: 100vh;
+  background: #eef2f7;
+  padding: 30px 20px 60px;
+  direction: rtl;
+  font-family: Tahoma, Arial, sans-serif;
+  color: #172033;
+}
+
+/* =========================================
+   دکمه‌های بالا
+========================================= */
+
+.payslip-actions {
+  max-width: 900px;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.payslip-actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.print-button {
+  background: #2563eb;
+  color: white;
+}
+
+.print-button:hover {
+  background: #1d4ed8;
+}
+
+.back-button {
+  background: #64748b;
+  color: white;
+}
+
+.back-button:hover {
+  background: #475569;
+}
+
+/* =========================================
+   برگه اصلی
+========================================= */
+
+.payslip-paper {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 35px;
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.12);
+  border: 1px solid #dbe3ee;
+}
+
+/* =========================================
+   سربرگ
+========================================= */
+
+.company-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+  padding-bottom: 25px;
+  border-bottom: 3px solid #2563eb;
+}
+
+.company-header h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 900;
+  color: #172554;
+}
+
+.company-header p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.payslip-number {
+  min-width: 130px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  text-align: center;
+}
+
+.payslip-number span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.payslip-number strong {
+  display: block;
+  color: #1d4ed8;
+  font-size: 22px;
+}
+
+/* =========================================
+   دوره
+========================================= */
+
+.period {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.period > div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 13px 18px;
+}
+
+.period span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.period strong {
+  font-size: 17px;
+  color: #172033;
+}
+
+/* =========================================
+   عنوان بخش‌ها
+========================================= */
+
+.employee-info,
+.salary-section {
+  margin-top: 25px;
+}
+
+.employee-info h2,
+.salary-section h2 {
+  margin: 0 0 14px;
+  padding-right: 12px;
+  border-right: 4px solid #2563eb;
+  font-size: 18px;
+  color: #172033;
+}
+
+/* =========================================
+   اطلاعات کارمند
+========================================= */
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.info-grid > div {
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.info-grid span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.info-grid strong {
+  display: block;
+  color: #172033;
+  font-size: 15px;
+}
+
+.info-grid .approved {
+  color: #15803d;
+}
+
+/* =========================================
+   جدول حقوق
+========================================= */
+
+.salary-section table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+}
+
+.salary-section th {
+  background: #172554;
+  color: white;
+  padding: 13px;
+  text-align: right;
+  font-size: 14px;
+}
+
+.salary-section td {
+  padding: 12px 13px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.salary-section tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.salary-section tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.salary-section td:last-child,
+.salary-section th:last-child {
+  text-align: left;
+  direction: rtl;
+}
+
+/* کسورات */
+
+.salary-section tr.deduction td {
+  color: #b91c1c;
+}
+
+/* =========================================
+   خالص پرداختی
+========================================= */
+
+.net-pay {
+  margin-top: 25px;
+  padding: 22px 25px;
+  border-radius: 14px;
+  background: #ecfdf5;
+  border: 2px solid #86efac;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.net-pay span {
+  font-size: 17px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.net-pay strong {
+  font-size: 28px;
+  font-weight: 900;
+  color: #15803d;
+}
+
+.net-pay small {
+  font-size: 15px;
+  color: #166534;
+}
+
+/* =========================================
+   پایین فیش
+========================================= */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 30px;
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.footer > div {
+  min-width: 180px;
+}
+
+.footer span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.footer strong {
+  font-size: 14px;
+  color: #172033;
+}
+
+.signature {
+  text-align: center;
+}
+
+.signature div {
+  height: 70px;
+  border-bottom: 1px solid #64748b;
+  margin-top: 5px;
+}
+
+/* =========================================
+   حالت بارگذاری
+========================================= */
+
+.payslip-loading {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f1f5f9;
+  font-family: Tahoma, Arial, sans-serif;
+  color: #475569;
+  text-align: center;
+}
+
+.payslip-loading h2 {
+  margin-bottom: 20px;
+}
+
+.payslip-loading button {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 11px 25px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+/* =========================================
+   چاپ حرفه‌ای
+========================================= */
+
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .payslip-page {
+    min-height: auto !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* دکمه‌ها در چاپ دیده نشوند */
+
+  .payslip-actions {
+    display: none !important;
+  }
+
+  /* برگه */
+
+  .payslip-paper {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0 !important;
+
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  .company-header {
+    border-bottom: 2px solid #1d4ed8 !important;
+  }
+
+  .company-header h1 {
+    font-size: 25px !important;
+  }
+
+  .company-header p {
+    font-size: 11px !important;
+  }
+
+  .payslip-number {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+  }
+
+  .period {
+    margin: 12px 0 !important;
+  }
+
+  .period > div,
+  .info-grid > div {
+    background: white !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .employee-info,
+  .salary-section {
+    margin-top: 15px !important;
+  }
+
+  .employee-info h2,
+  .salary-section h2 {
+    font-size: 15px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .info-grid {
+    gap: 8px !important;
+  }
+
+  .info-grid > div {
+    padding: 8px 10px !important;
+  }
+
+  .info-grid span {
+    font-size: 9px !important;
+  }
+
+  .info-grid strong {
+    font-size: 11px !important;
+  }
+
+  .salary-section th {
+    background: #172554 !important;
+    color: white !important;
+    padding: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .salary-section td {
+    padding: 7px 8px !important;
+    font-size: 10.5px !important;
+  }
+
+  .salary-section tr {
+    page-break-inside: avoid;
+  }
+
+  .net-pay {
+    margin-top: 15px !important;
+    padding: 13px !important;
+    background: #ecfdf5 !important;
+    border: 1px solid #86efac !important;
+  }
+
+  .net-pay span {
+    font-size: 13px !important;
+  }
+
+  .net-pay strong {
+    font-size: 21px !important;
+  }
+
+  .net-pay small {
+    font-size: 11px !important;
+  }
+
+  .footer {
+    margin-top: 20px !important;
+    padding-top: 15px !important;
+  }
+
+  .footer span {
+    font-size: 9px !important;
+  }
+
+  .footer strong {
+    font-size: 11px !important;
+  }
+
+  .signature div {
+    height: 45px !important;
+  }
+}
+
+/* =========================================
+   موبایل
+========================================= */
+
+@media (max-width: 700px) {
+
+  .payslip-page {
+    padding: 15px 10px 30px;
+  }
+
+  .payslip-paper {
+    padding: 20px 15px;
+    border-radius: 12px;
+  }
+
+  .payslip-actions {
+    flex-direction: column;
+  }
+
+  .payslip-actions button {
+    width: 100%;
+  }
+
+  .company-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .payslip-number {
+    width: 100%;
+  }
+
+  .period {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .salary-section {
+    overflow-x: auto;
+  }
+
+  .salary-section table {
+    min-width: 500px;
+  }
+
+  .net-pay {
+    flex-wrap: wrap;
+  }
+
+  .net-pay strong {
+    font-size: 23px;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .signature {
+    margin-top: 20px;
+  }
+}

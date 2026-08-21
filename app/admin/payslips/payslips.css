@@ -1,0 +1,539 @@
+.payslips-page {
+  min-height: 100vh;
+  padding: 30px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: Tahoma, Arial, sans-serif;
+}
+
+.payslips-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.title-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  font-size: 27px;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+}
+
+.payslips-header h1 {
+  margin: 0;
+  font-size: 29px;
+  font-weight: 800;
+}
+
+.payslips-header p {
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.header-badge {
+  padding: 11px 16px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.header-badge span {
+  color: #22c55e;
+  margin-left: 7px;
+}
+
+/* آمار */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 17px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 5px 20px rgba(15, 23, 42, 0.05);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+}
+
+.stat-icon.blue {
+  background: #eff6ff;
+}
+
+.stat-icon.green {
+  background: #f0fdf4;
+}
+
+.stat-icon.orange {
+  background: #fff7ed;
+}
+
+.stat-icon.purple {
+  background: #faf5ff;
+}
+
+.stat-card span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.stat-card strong {
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.stat-card small {
+  color: #94a3b8;
+  margin-right: 5px;
+}
+
+/* کارت فرم */
+
+.form-card,
+.table-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 19px;
+  box-shadow: 0 5px 20px rgba(15, 23, 42, 0.05);
+  margin-bottom: 25px;
+}
+
+.form-card {
+  padding: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.section-header p {
+  margin: 7px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.section-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  font-size: 20px;
+}
+
+/* فرم */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  height: 46px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 11px;
+  padding: 0 13px;
+  background: white;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-with-label {
+  position: relative;
+}
+
+.input-with-label input {
+  padding-left: 65px;
+}
+
+.input-with-label span {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.deduction input {
+  border-color: #fecaca;
+}
+
+/* خلاصه */
+
+.salary-summary {
+  margin-top: 25px;
+  padding: 18px;
+  border-radius: 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) 1.4fr;
+  gap: 15px;
+  align-items: center;
+}
+
+.summary-item {
+  padding: 5px 15px;
+  border-left: 1px solid #e2e8f0;
+}
+
+.summary-item span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.summary-item strong {
+  font-size: 15px;
+}
+
+.positive {
+  color: #16a34a;
+}
+
+.negative {
+  color: #dc2626;
+}
+
+.net-summary {
+  padding: 16px 20px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #eff6ff, #eef2ff);
+  border: 1px solid #bfdbfe;
+}
+
+.net-summary span {
+  display: block;
+  color: #475569;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.net-summary strong {
+  color: #1d4ed8;
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.net-summary small {
+  color: #64748b;
+  margin-right: 5px;
+}
+
+/* دکمه */
+
+.form-actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.submit-button {
+  min-width: 220px;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.submit-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.2);
+}
+
+.submit-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* جدول */
+
+.table-card {
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 23px 25px 18px;
+  margin: 0;
+}
+
+.count-badge {
+  padding: 8px 13px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+
+.table-wrapper th {
+  padding: 15px 18px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.table-wrapper td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+}
+
+.table-wrapper tbody tr:hover {
+  background: #f8fafc;
+}
+
+.employee-name {
+  color: #0f172a !important;
+  font-weight: 800;
+}
+
+.net-value {
+  color: #15803d !important;
+  font-weight: 800;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.empty-cell {
+  height: 260px;
+  text-align: center !important;
+}
+
+.empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 29px;
+  margin-bottom: 12px;
+}
+
+.empty-box h3 {
+  margin: 0 0 7px;
+  color: #334155;
+  font-size: 16px;
+}
+
+.empty-box p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.loading-box p {
+  margin: 0;
+  color: #64748b;
+}
+
+/* لودینگ */
+
+.spinner {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.spinner.dark {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #dbeafe;
+  border-top-color: #2563eb;
+  margin: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* موبایل */
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .salary-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .net-summary {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 700px) {
+  .payslips-page {
+    padding: 15px;
+  }
+
+  .payslips-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .header-badge {
+    text-align: center;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .salary-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-item {
+    border-left: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 12px;
+  }
+
+  .net-summary {
+    grid-column: auto;
+  }
+
+  .submit-button {
+    width: 100%;
+  }
+}
