@@ -143,6 +143,57 @@ export default function PayslipsPage() {
   }
 
   /* =====================================================
+     انتخاب کارمند
+     
+     با انتخاب کارمند:
+     شماره حساب
+     گروه شغلی
+     عنوان شغلی
+     به صورت خودکار پر می‌شوند.
+     
+     بعد از پر شدن، کاربر می‌تواند آنها را اصلاح کند.
+  ===================================================== */
+
+  function handleEmployeeChange(value) {
+    if (!value) {
+      setForm((previous) => ({
+        ...previous,
+        personnel_id: "",
+        bank_account: "",
+        job_group: "",
+        job_title: "",
+      }));
+
+      return;
+    }
+
+    const selectedEmployee = employees.find(
+      (employee) =>
+        String(employee.id) === String(value)
+    );
+
+    if (!selectedEmployee) {
+      updateForm("personnel_id", value);
+      return;
+    }
+
+    setForm((previous) => ({
+      ...previous,
+
+      personnel_id: String(selectedEmployee.id),
+
+      bank_account:
+        selectedEmployee.bank_account || "",
+
+      job_group:
+        selectedEmployee.job_group || "",
+
+      job_title:
+        selectedEmployee.job_title || "",
+    }));
+  }
+
+  /* =====================================================
      ثبت / ویرایش
   ===================================================== */
 
@@ -375,9 +426,7 @@ export default function PayslipsPage() {
       dir="rtl"
     >
 
-      {/* =================================================
-          Header
-      ================================================= */}
+      {/* Header */}
 
       <div className="payslips-header">
 
@@ -407,9 +456,7 @@ export default function PayslipsPage() {
       </div>
 
 
-      {/* =================================================
-          Statistics
-      ================================================= */}
+      {/* Statistics */}
 
       <div className="stats-grid">
 
@@ -518,9 +565,7 @@ export default function PayslipsPage() {
       </div>
 
 
-      {/* =================================================
-          Form
-      ================================================= */}
+      {/* Form */}
 
       <div className="form-card">
 
@@ -557,7 +602,7 @@ export default function PayslipsPage() {
 
           <div className="form-grid">
 
-            {/* کارمند */}
+            {/* انتخاب کارمند */}
 
             <div className="form-group employee-field">
 
@@ -566,12 +611,9 @@ export default function PayslipsPage() {
               </label>
 
               <select
-                value={
-                  form.personnel_id
-                }
+                value={form.personnel_id}
                 onChange={(e) =>
-                  updateForm(
-                    "personnel_id",
+                  handleEmployeeChange(
                     e.target.value
                   )
                 }
@@ -688,9 +730,7 @@ export default function PayslipsPage() {
 
               <input
                 type="text"
-                value={
-                  form.bank_account
-                }
+                value={form.bank_account}
                 onChange={(e) =>
                   updateForm(
                     "bank_account",
@@ -713,9 +753,7 @@ export default function PayslipsPage() {
 
               <input
                 type="text"
-                value={
-                  form.job_group
-                }
+                value={form.job_group}
                 onChange={(e) =>
                   updateForm(
                     "job_group",
@@ -738,9 +776,7 @@ export default function PayslipsPage() {
 
               <input
                 type="text"
-                value={
-                  form.job_title
-                }
+                value={form.job_title}
                 onChange={(e) =>
                   updateForm(
                     "job_title",
@@ -912,9 +948,7 @@ export default function PayslipsPage() {
           </div>
 
 
-          {/* =================================================
-              Summary
-          ================================================= */}
+          {/* خلاصه حقوق */}
 
           <div className="salary-summary">
 
@@ -987,9 +1021,7 @@ export default function PayslipsPage() {
           </div>
 
 
-          {/* =================================================
-              Buttons
-          ================================================= */}
+          {/* دکمه‌ها */}
 
           <div className="form-actions">
 
@@ -1027,9 +1059,7 @@ export default function PayslipsPage() {
       </div>
 
 
-      {/* =================================================
-          Payslips Table
-      ================================================= */}
+      {/* جدول فیش‌ها */}
 
       <div className="table-card">
 
@@ -1127,9 +1157,7 @@ export default function PayslipsPage() {
                     colSpan="8"
                     className="empty-cell"
                   >
-
                     هنوز فیشی صادر نشده است.
-
                   </td>
 
                 </tr>
@@ -1215,8 +1243,6 @@ export default function PayslipsPage() {
                           }}
                         >
 
-                          {/* مشاهده */}
-
                           <a
                             href={`/admin/payslips/${payslip.id}`}
                             className="view-button"
@@ -1224,8 +1250,6 @@ export default function PayslipsPage() {
                             👁 مشاهده
                           </a>
 
-
-                          {/* ویرایش */}
 
                           <button
                             type="button"
@@ -1250,8 +1274,6 @@ export default function PayslipsPage() {
                             ✏️ ویرایش
                           </button>
 
-
-                          {/* حذف */}
 
                           <button
                             type="button"

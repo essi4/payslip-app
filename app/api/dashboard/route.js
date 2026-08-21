@@ -3,146 +3,60 @@ import pool from "../../lib/db";
 
 export async function GET() {
   try {
-    // ==============================
-    // تعداد کارکنان
-    // ==============================
+    const employeesResult = await pool.query(
+      "SELECT COUNT(*)::int AS count FROM personnel"
+    );
 
-    const employeesResult = await pool.query(`
-      SELECT COUNT(*)::int AS count
-      FROM personnel
-    `);
+    const payslipsResult = await pool.query(
+      "SELECT COUNT(*)::int AS count FROM payslips"
+    );
 
-    // ==============================
-    // تعداد فیش‌ها
-    // ==============================
+    const salaryResult = await pool.query(
+      "SELECT COALESCE(SUM(base_salary), 0) AS total_base_salary, COALESCE(SUM(net_salary), 0) AS total_net_salary FROM payslips"
+    );
 
-    const payslipsResult = await pool.query(`
-      SELECT COUNT(*)::int AS count
-      FROM payslips
-    `);
+    const recentResult = await pool.query(
+      "SELECT p.id, p.personnel_id, p.year, p.month, p.base_salary, p.net_salary, p.created_at, COALESCE(pe.full_name, '—') AS full_name, COALESCE(pe.personnel_code, '—') AS personnel_code FROM payslips p LEFT JOIN personnel pe ON pe.id = p.personnel_id ORDER BY p.id DESC LIMIT 5"
+    );
 
-    // ==============================
-    // مجموع حقوق پایه
-    // ==============================
+    const employeesCount = Number(
+      employeesResult.rows[0]?.count || 0
+    );
 
-    const baseSalaryResult = await pool.query(`
-      SELECT COALESCE(SUM(base_salary), 0) AS total
-      FROM payslips
-    `);
+    const payslipsCount = Number(
+      payslipsResult.rows[0]?.count || 0
+    );
 
-    // ==============================
-    // مجموع مزایا
-    // ==============================
+    const totalBaseSalary = Number(
+      salaryResult.rows[0]?.total_base_salary || 0
+    );
 
-    const benefitsResult = await pool.query(`
-      SELECT COALESCE(
-        SUM(
-          COALESCE(overtime, 0) +
-          COALESCE(bonus, 0) +
-          COALESCE(housing_allowance, 0) +
-          COALESCE(food_allowance, 0) +
-          COALESCE(marriage_allowance, 0) +
-          COALESCE(child_allowance, 0) +
-          COALESCE(other_benefits, 0)
-        ),
-        0
-      ) AS total
-      FROM payslips
-    `);
-
-    // ==============================
-    // مجموع کسورات
-    // ==============================
-
-    const deductionsResult = await pool.query(`
-      SELECT COALESCE(
-        SUM(
-          COALESCE(insurance, 0) +
-          COALESCE(tax, 0) +
-          COALESCE(other_deductions, 0)
-        ),
-        0
-      ) AS total
-      FROM payslips
-    `);
-
-    // ==============================
-    // مجموع خالص پرداختی
-    // ==============================
-
-    const netSalaryResult = await pool.query(`
-      SELECT COALESCE(SUM(net_salary), 0) AS total
-      FROM payslips
-    `);
-
-    // ==============================
-    // آخرین فیش‌ها
-    // ==============================
-
-    const recentPayslipsResult = await pool.query(`
-      SELECT
-        p.id,
-        p.year,
-        p.month,
-        p.base_salary,
-        p.net_salary,
-        p.created_at,
-        e.full_name,
-        e.personnel_code
-      FROM payslips p
-      LEFT JOIN personnel e
-        ON p.personnel_id = e.id
-      ORDER BY p.id DESC
-      LIMIT 5
-    `);
-
-    // ==============================
-    // پاسخ نهایی
-    // ==============================
+    const totalNetSalary = Number(
+      salaryResult.rows[0]?.total_net_salary || 0
+    );
 
     return NextResponse.json({
       success: true,
-
       data: {
-        employeesCount:
-          employeesResult.rows[0].count,
-
-        payslipsCount:
-          payslipsResult.rows[0].count,
-
-        totalBaseSalary:
-          Number(baseSalaryResult.rows[0].total || 0),
-
-        totalBenefits:
-          Number(benefitsResult.rows[0].total || 0),
-
-        totalDeductions:
-          Number(deductionsResult.rows[0].total || 0),
-
-        totalNetSalary:
-          Number(netSalaryResult.rows[0].total || 0),
-
-        recentPayslips:
-          recentPayslipsResult.rows,
-      },
+        employeesCount,
+        payslipsCount,
+        totalBaseSalary,
+        totalBenefits: 0,
+        totalDeductions: 0,
+        totalNetSalary,
+        recentPayslips: recentResult.rows
+      }
     });
-
   } catch (error) {
-
-    console.error(
-      "GET dashboard error:",
-      error
-    );
+    console.error("DASHBOARD ERROR:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          error.message ||
-          "خطا در دریافت اطلاعات داشبورد",
+        error: error?.message || "خطا در دریافت داشبورد"
       },
       {
-        status: 500,
+        status: 500
       }
     );
   }

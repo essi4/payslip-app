@@ -11,7 +11,6 @@ export async function GET() {
       SELECT
         p.id,
         p.personnel_id,
-
         p.year,
         p.month,
 
@@ -34,7 +33,6 @@ export async function GET() {
         p.other_deductions,
 
         p.net_salary,
-
         p.created_at,
 
         e.full_name,
@@ -61,7 +59,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: error?.message || "خطا در دریافت فیش‌ها",
       },
       { status: 500 }
     );
@@ -79,7 +77,6 @@ export async function POST(request) {
 
     const {
       personnel_id,
-
       year,
       month,
 
@@ -102,12 +99,13 @@ export async function POST(request) {
       other_deductions,
     } = body;
 
-
     /* -----------------------------------------------------
        بررسی کارمند
     ----------------------------------------------------- */
 
-    if (!personnel_id) {
+    const personnelId = Number(personnel_id);
+
+    if (!personnelId) {
       return NextResponse.json(
         {
           success: false,
@@ -117,7 +115,6 @@ export async function POST(request) {
       );
     }
 
-
     /* -----------------------------------------------------
        تبدیل اعداد
     ----------------------------------------------------- */
@@ -126,30 +123,15 @@ export async function POST(request) {
     const overtimeValue = Number(overtime) || 0;
     const bonusValue = Number(bonus) || 0;
 
-    const housingValue =
-      Number(housing_allowance) || 0;
+    const housingValue = Number(housing_allowance) || 0;
+    const foodValue = Number(food_allowance) || 0;
+    const marriageValue = Number(marriage_allowance) || 0;
+    const childValue = Number(child_allowance) || 0;
+    const otherBenefitsValue = Number(other_benefits) || 0;
 
-    const foodValue =
-      Number(food_allowance) || 0;
-
-    const marriageValue =
-      Number(marriage_allowance) || 0;
-
-    const childValue =
-      Number(child_allowance) || 0;
-
-    const otherBenefitsValue =
-      Number(other_benefits) || 0;
-
-    const insuranceValue =
-      Number(insurance) || 0;
-
-    const taxValue =
-      Number(tax) || 0;
-
-    const otherDeductionsValue =
-      Number(other_deductions) || 0;
-
+    const insuranceValue = Number(insurance) || 0;
+    const taxValue = Number(tax) || 0;
+    const otherDeductionsValue = Number(other_deductions) || 0;
 
     /* -----------------------------------------------------
        بررسی حقوق پایه
@@ -165,7 +147,6 @@ export async function POST(request) {
       );
     }
 
-
     /* -----------------------------------------------------
        بررسی وجود کارمند
     ----------------------------------------------------- */
@@ -176,24 +157,41 @@ export async function POST(request) {
         id,
         full_name,
         personnel_code,
-        job_title
+        national_id,
+        department,
+        job_title,
+        bank_account,
+        job_group
       FROM personnel
       WHERE id = $1
       `,
-      [Number(personnel_id)]
+      [personnelId]
     );
 
     if (employee.rows.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "کارمند انتخاب شده در جدول personnel وجود ندارد.",
+          error: "کارمند انتخاب شده در جدول personnel وجود ندارد.",
         },
         { status: 400 }
       );
     }
 
+    const employeeData = employee.rows[0];
+
+    /* -----------------------------------------------------
+       اطلاعات خالی را از مشخصات کارمند پر کن
+    ----------------------------------------------------- */
+
+    const finalBankAccount =
+      bank_account ?? employeeData.bank_account ?? "";
+
+    const finalJobGroup =
+      job_group ?? employeeData.job_group ?? "";
+
+    const finalJobTitle =
+      job_title ?? employeeData.job_title ?? "";
 
     /* -----------------------------------------------------
        محاسبه مزایا
@@ -208,7 +206,6 @@ export async function POST(request) {
       childValue +
       otherBenefitsValue;
 
-
     /* -----------------------------------------------------
        محاسبه کسورات
     ----------------------------------------------------- */
@@ -217,7 +214,6 @@ export async function POST(request) {
       insuranceValue +
       taxValue +
       otherDeductionsValue;
-
 
     /* -----------------------------------------------------
        محاسبه خالص پرداختی
@@ -228,17 +224,18 @@ export async function POST(request) {
       totalBenefits -
       totalDeductions;
 
-
     /* -----------------------------------------------------
        ثبت فیش
+       
+       توجه:
+       اینجا دقیقاً 18 ستون
+       و دقیقاً 18 مقدار داریم.
     ----------------------------------------------------- */
 
     const result = await pool.query(
       `
       INSERT INTO payslips (
-
         personnel_id,
-
         year,
         month,
 
@@ -261,9 +258,7 @@ export async function POST(request) {
         other_deductions,
 
         net_salary
-
       )
-
       VALUES (
         $1,
         $2,
@@ -282,22 +277,19 @@ export async function POST(request) {
         $15,
         $16,
         $17,
-        $18,
-        $19
+        $18
       )
-
       RETURNING *
       `,
       [
-
-        Number(personnel_id),
+        personnelId,
 
         year || "1405",
         month || "فروردین",
 
-        bank_account || "",
-        job_group || "",
-        job_title || "",
+        finalBankAccount,
+        finalJobGroup,
+        finalJobTitle,
 
         base,
         overtimeValue,
@@ -317,30 +309,22 @@ export async function POST(request) {
       ]
     );
 
-
     return NextResponse.json(
       {
         success: true,
-
-        message:
-          "فیش حقوقی با موفقیت ثبت و صادر شد.",
-
+        message: "فیش حقوقی با موفقیت ثبت و صادر شد.",
         data: result.rows[0],
       },
       { status: 201 }
     );
 
   } catch (error) {
-
-    console.error(
-      "POST payslips error:",
-      error
-    );
+    console.error("POST payslips error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: error?.message || "خطا در ثبت فیش حقوقی",
       },
       { status: 500 }
     );
@@ -354,7 +338,6 @@ export async function POST(request) {
 ========================================================= */
 export async function PUT(request) {
   try {
-
     const body = await request.json();
 
     const {
@@ -383,12 +366,14 @@ export async function PUT(request) {
       other_deductions,
     } = body;
 
+    const payslipId = Number(id);
+    const personnelId = Number(personnel_id);
 
     /* -----------------------------------------------------
-       بررسی ID فیش
+       بررسی ID
     ----------------------------------------------------- */
 
-    if (!id) {
+    if (!payslipId) {
       return NextResponse.json(
         {
           success: false,
@@ -398,12 +383,11 @@ export async function PUT(request) {
       );
     }
 
-
     /* -----------------------------------------------------
        بررسی کارمند
     ----------------------------------------------------- */
 
-    if (!personnel_id) {
+    if (!personnelId) {
       return NextResponse.json(
         {
           success: false,
@@ -413,43 +397,102 @@ export async function PUT(request) {
       );
     }
 
-
     /* -----------------------------------------------------
        تبدیل اعداد
     ----------------------------------------------------- */
 
     const base = Number(base_salary) || 0;
+    const overtimeValue = Number(overtime) || 0;
+    const bonusValue = Number(bonus) || 0;
 
-    const overtimeValue =
-      Number(overtime) || 0;
+    const housingValue = Number(housing_allowance) || 0;
+    const foodValue = Number(food_allowance) || 0;
+    const marriageValue = Number(marriage_allowance) || 0;
+    const childValue = Number(child_allowance) || 0;
+    const otherBenefitsValue = Number(other_benefits) || 0;
 
-    const bonusValue =
-      Number(bonus) || 0;
+    const insuranceValue = Number(insurance) || 0;
+    const taxValue = Number(tax) || 0;
+    const otherDeductionsValue = Number(other_deductions) || 0;
 
-    const housingValue =
-      Number(housing_allowance) || 0;
+    /* -----------------------------------------------------
+       بررسی حقوق پایه
+    ----------------------------------------------------- */
 
-    const foodValue =
-      Number(food_allowance) || 0;
+    if (base <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "حقوق پایه باید بیشتر از صفر باشد.",
+        },
+        { status: 400 }
+      );
+    }
 
-    const marriageValue =
-      Number(marriage_allowance) || 0;
+    /* -----------------------------------------------------
+       بررسی وجود فیش
+    ----------------------------------------------------- */
 
-    const childValue =
-      Number(child_allowance) || 0;
+    const existing = await pool.query(
+      `
+      SELECT id
+      FROM payslips
+      WHERE id = $1
+      `,
+      [payslipId]
+    );
 
-    const otherBenefitsValue =
-      Number(other_benefits) || 0;
+    if (existing.rows.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "فیش موردنظر پیدا نشد.",
+        },
+        { status: 404 }
+      );
+    }
 
-    const insuranceValue =
-      Number(insurance) || 0;
+    /* -----------------------------------------------------
+       بررسی وجود کارمند
+    ----------------------------------------------------- */
 
-    const taxValue =
-      Number(tax) || 0;
+    const employee = await pool.query(
+      `
+      SELECT
+        id,
+        bank_account,
+        job_group,
+        job_title
+      FROM personnel
+      WHERE id = $1
+      `,
+      [personnelId]
+    );
 
-    const otherDeductionsValue =
-      Number(other_deductions) || 0;
+    if (employee.rows.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "کارمند انتخاب شده وجود ندارد.",
+        },
+        { status: 400 }
+      );
+    }
 
+    const employeeData = employee.rows[0];
+
+    /* -----------------------------------------------------
+       اطلاعات نهایی
+    ----------------------------------------------------- */
+
+    const finalBankAccount =
+      bank_account ?? employeeData.bank_account ?? "";
+
+    const finalJobGroup =
+      job_group ?? employeeData.job_group ?? "";
+
+    const finalJobTitle =
+      job_title ?? employeeData.job_title ?? "";
 
     /* -----------------------------------------------------
        محاسبه مزایا
@@ -464,7 +507,6 @@ export async function PUT(request) {
       childValue +
       otherBenefitsValue;
 
-
     /* -----------------------------------------------------
        محاسبه کسورات
     ----------------------------------------------------- */
@@ -473,7 +515,6 @@ export async function PUT(request) {
       insuranceValue +
       taxValue +
       otherDeductionsValue;
-
 
     /* -----------------------------------------------------
        محاسبه خالص
@@ -484,56 +525,6 @@ export async function PUT(request) {
       totalBenefits -
       totalDeductions;
 
-
-    /* -----------------------------------------------------
-       بررسی وجود فیش
-    ----------------------------------------------------- */
-
-    const existing = await pool.query(
-      `
-      SELECT id
-      FROM payslips
-      WHERE id = $1
-      `,
-      [Number(id)]
-    );
-
-    if (existing.rows.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "فیش موردنظر پیدا نشد.",
-        },
-        { status: 404 }
-      );
-    }
-
-
-    /* -----------------------------------------------------
-       بررسی کارمند
-    ----------------------------------------------------- */
-
-    const employee = await pool.query(
-      `
-      SELECT id
-      FROM personnel
-      WHERE id = $1
-      `,
-      [Number(personnel_id)]
-    );
-
-    if (employee.rows.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "کارمند انتخاب شده وجود ندارد.",
-        },
-        { status: 400 }
-      );
-    }
-
-
     /* -----------------------------------------------------
        بروزرسانی
     ----------------------------------------------------- */
@@ -541,11 +532,8 @@ export async function PUT(request) {
     const result = await pool.query(
       `
       UPDATE payslips
-
       SET
-
         personnel_id = $1,
-
         year = $2,
         month = $3,
 
@@ -574,15 +562,14 @@ export async function PUT(request) {
       RETURNING *
       `,
       [
-
-        Number(personnel_id),
+        personnelId,
 
         year || "1405",
         month || "فروردین",
 
-        bank_account || "",
-        job_group || "",
-        job_title || "",
+        finalBankAccount,
+        finalJobGroup,
+        finalJobTitle,
 
         base,
         overtimeValue,
@@ -600,31 +587,23 @@ export async function PUT(request) {
 
         netSalary,
 
-        Number(id),
+        payslipId,
       ]
     );
 
-
     return NextResponse.json({
       success: true,
-
-      message:
-        "فیش حقوقی با موفقیت ویرایش شد.",
-
+      message: "فیش حقوقی با موفقیت ویرایش شد.",
       data: result.rows[0],
     });
 
   } catch (error) {
-
-    console.error(
-      "PUT payslips error:",
-      error
-    );
+    console.error("PUT payslips error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: error?.message || "خطا در ویرایش فیش حقوقی",
       },
       { status: 500 }
     );
@@ -638,11 +617,9 @@ export async function PUT(request) {
 ========================================================= */
 export async function DELETE(request) {
   try {
-
     const body = await request.json();
 
     const id = Number(body.id);
-
 
     /* -----------------------------------------------------
        بررسی ID
@@ -658,7 +635,6 @@ export async function DELETE(request) {
       );
     }
 
-
     /* -----------------------------------------------------
        بررسی وجود فیش
     ----------------------------------------------------- */
@@ -672,7 +648,6 @@ export async function DELETE(request) {
       [id]
     );
 
-
     if (existing.rows.length === 0) {
       return NextResponse.json(
         {
@@ -682,7 +657,6 @@ export async function DELETE(request) {
         { status: 404 }
       );
     }
-
 
     /* -----------------------------------------------------
        حذف
@@ -696,25 +670,18 @@ export async function DELETE(request) {
       [id]
     );
 
-
     return NextResponse.json({
       success: true,
-
-      message:
-        "فیش حقوقی با موفقیت حذف شد.",
+      message: "فیش حقوقی با موفقیت حذف شد.",
     });
 
   } catch (error) {
-
-    console.error(
-      "DELETE payslip error:",
-      error
-    );
+    console.error("DELETE payslip error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: error?.message || "خطا در حذف فیش حقوقی",
       },
       { status: 500 }
     );
