@@ -124,7 +124,7 @@ function PayslipDocument({ payslip, onBack, onPrint }) {
             </div>
           </div>
 
-          <div className="grid overflow-hidden rounded-xl border border-slate-200 grid-cols-2 md:grid-cols-3">
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 md:grid-cols-3">
             <Cell
               label="نام و نام خانوادگی"
               value={payslip.full_name}
@@ -197,7 +197,7 @@ function PayslipDocument({ payslip, onBack, onPrint }) {
             </div>
           </div>
 
-          <div className="grid overflow-hidden rounded-xl border border-slate-200 grid-cols-2 md:grid-cols-6">
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 md:grid-cols-6">
             <Cell label="روزهای کارکرد" value="31 روز" />
             <Cell label="ساعات کارکرد" value="220 ساعت" />
             <Cell label="اضافه‌کاری" value="—" />
@@ -395,8 +395,18 @@ function PayslipDocument({ payslip, onBack, onPrint }) {
 }
 
 export default function PayslipPage() {
+  const [mode, setMode] = useState("login");
+
   const [nationalId, setNationalId] = useState("");
   const [password, setPassword] = useState("");
+
+  const [personnelCode, setPersonnelCode] = useState("");
+
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [serverRecoveryCode, setServerRecoveryCode] = useState("");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [employee, setEmployee] = useState(null);
   const [months, setMonths] = useState([]);
@@ -404,10 +414,19 @@ export default function PayslipPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  /*
+    ============================
+    ورود کارمند
+    ============================
+  */
 
   async function login() {
     setError("");
+    setSuccess("");
     setLoading(true);
+
     setEmployee(null);
     setMonths([]);
     setSelectedPayslip(null);
@@ -451,7 +470,9 @@ export default function PayslipPage() {
       setMonths(result.months || []);
 
       if (!result.months || result.months.length === 0) {
-        setError("برای این پرسنل هنوز فیشی ثبت نشده است.");
+        setError(
+          "برای این پرسنل هنوز فیشی ثبت نشده است."
+        );
       }
     } catch (error) {
       console.error(error);
@@ -461,8 +482,186 @@ export default function PayslipPage() {
     }
   }
 
+  /*
+    ============================
+    درخواست بازیابی رمز
+    ============================
+  */
+
+  async function requestRecovery() {
+    setError("");
+    setSuccess("");
+    setServerRecoveryCode("");
+    setLoading(true);
+
+    const cleanId = nationalId.replace(/[^0-9]/g, "");
+    const cleanPersonnelCode = personnelCode.trim();
+
+    if (cleanId.length !== 10) {
+      setError("کد ملی باید ۱۰ رقمی باشد.");
+      setLoading(false);
+      return;
+    }
+
+    if (!cleanPersonnelCode) {
+      setError("کد پرسنلی را وارد کنید.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "/api/payslip/forgot-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            national_id: cleanId,
+            personnel_code: cleanPersonnelCode,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setError(
+          result.error ||
+            "اطلاعات واردشده صحیح نیست."
+        );
+        return;
+      }
+
+      /*
+        فعلاً بدون SMS:
+        API برای تست کد بازیابی را برمی‌گرداند.
+      */
+
+      if (result.recovery_code) {
+        setServerRecoveryCode(
+          String(result.recovery_code)
+        );
+      }
+
+      setSuccess(
+        result.message ||
+          "کد بازیابی ایجاد شد."
+      );
+
+      setMode("verify");
+    } catch (error) {
+      console.error(error);
+      setError("خطا در ارتباط با سرور.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /*
+    ============================
+    تغییر رمز عبور
+    ============================
+  */
+
+  async function resetPassword() {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    if (!recoveryCode.trim()) {
+      setError("کد بازیابی را وارد کنید.");
+      setLoading(false);
+      return;
+    }
+
+    if (!newPassword.trim()) {
+      setError("رمز عبور جدید را وارد کنید.");
+      setLoading(false);
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      setError(
+        "رمز عبور جدید باید حداقل ۴ کاراکتر باشد."
+      );
+      setLoading(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError(
+        "رمز عبور جدید و تکرار آن یکسان نیست."
+      );
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "/api/payslip/reset-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            national_id: nationalId.replace(
+              /[^0-9]/g,
+              ""
+            ),
+            personnel_code:
+              personnelCode.trim(),
+            recovery_code:
+              recoveryCode.trim(),
+            new_password: newPassword,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setError(
+          result.error ||
+            "تغییر رمز عبور انجام نشد."
+        );
+        return;
+      }
+
+      setSuccess(
+        result.message ||
+          "رمز عبور با موفقیت تغییر کرد."
+      );
+
+      setPassword("");
+      setRecoveryCode("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setServerRecoveryCode("");
+
+      setTimeout(() => {
+        setMode("login");
+        setSuccess("");
+      }, 1500);
+    } catch (error) {
+      console.error(error);
+      setError("خطا در تغییر رمز عبور.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /*
+    ============================
+    مشاهده فیش
+    ============================
+  */
+
   async function openPayslip(month, year) {
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -490,10 +689,17 @@ export default function PayslipPage() {
         return;
       }
 
-      if (result.data && result.data.length > 0) {
-        setSelectedPayslip(result.data[0]);
+      if (
+        result.data &&
+        result.data.length > 0
+      ) {
+        setSelectedPayslip(
+          result.data[0]
+        );
       } else {
-        setError("فیش موردنظر پیدا نشد.");
+        setError(
+          "فیش موردنظر پیدا نشد."
+        );
       }
     } catch (error) {
       console.error(error);
@@ -503,14 +709,38 @@ export default function PayslipPage() {
     }
   }
 
+  /*
+    ============================
+    خروج
+    ============================
+  */
+
   function logout() {
     setNationalId("");
     setPassword("");
+    setPersonnelCode("");
+
+    setRecoveryCode("");
+    setServerRecoveryCode("");
+
+    setNewPassword("");
+    setConfirmPassword("");
+
     setEmployee(null);
     setMonths([]);
     setSelectedPayslip(null);
+
     setError("");
+    setSuccess("");
+
+    setMode("login");
   }
+
+  /*
+    ============================
+    چاپ فیش
+    ============================
+  */
 
   function printPayslip(id) {
     const element = document.getElementById(
@@ -560,13 +790,6 @@ export default function PayslipPage() {
               font-size: 11px;
             }
 
-            .payslip-paper {
-              width: 100%;
-              max-width: 950px;
-              margin: 0 auto;
-              background: #fff;
-            }
-
             .no-print {
               display: none !important;
             }
@@ -606,6 +829,12 @@ export default function PayslipPage() {
     printWindow.document.close();
   }
 
+  /*
+    ============================
+    صفحه
+    ============================
+  */
+
   return (
     <main
       dir="rtl"
@@ -616,6 +845,7 @@ export default function PayslipPage() {
         {/* Header */}
         <header className="mb-4 overflow-hidden rounded-2xl bg-gradient-to-l from-slate-950 via-blue-950 to-slate-900 px-4 py-5 text-white shadow-lg">
           <div className="flex flex-col items-center justify-center gap-1 text-center">
+
             <div className="text-[10px] font-bold text-blue-300">
               سیستم حقوق و دستمزد
             </div>
@@ -627,24 +857,29 @@ export default function PayslipPage() {
             <p className="text-[11px] text-slate-300">
               سامانه مشاهده فیش حقوقی کارکنان
             </p>
+
           </div>
         </header>
 
-        {/* Login */}
-        {!employee && (
+        {/* ================= LOGIN ================= */}
+
+        {!employee && mode === "login" && (
           <section className="mx-auto max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+
             <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 text-center">
+
               <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-xl">
                 🔒
               </div>
 
               <h2 className="mt-2 text-lg font-black text-slate-950">
-                سامانه کارکنان
+                ورود کارکنان
               </h2>
 
               <p className="mt-1 text-[11px] text-slate-500">
                 برای مشاهده فیش حقوقی، کد ملی و رمز عبور خود را وارد کنید.
               </p>
+
             </div>
 
             <div className="space-y-3.5 p-5">
@@ -716,16 +951,288 @@ export default function PayslipPage() {
                   ? "در حال بررسی..."
                   : "🔐 ورود به سامانه"}
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("forgot");
+                  setError("");
+                  setSuccess("");
+                }}
+                className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-blue-700 transition hover:bg-blue-100"
+              >
+                🔑 فراموشی رمز عبور
+              </button>
+
             </div>
           </section>
         )}
 
-        {/* Employee + Months */}
+        {/* ================= FORGOT PASSWORD ================= */}
+
+        {!employee && mode === "forgot" && (
+          <section className="mx-auto max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-5 text-center">
+
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-xl">
+                🔑
+              </div>
+
+              <h2 className="mt-2 text-lg font-black text-slate-950">
+                فراموشی رمز عبور
+              </h2>
+
+              <p className="mt-1 text-[11px] leading-6 text-slate-500">
+                برای بازیابی رمز، کد ملی و کد پرسنلی خود را وارد کنید.
+              </p>
+
+            </div>
+
+            <div className="space-y-4 p-5">
+
+              <div>
+                <label className="mb-1.5 block text-xs font-black text-slate-700">
+                  کد ملی
+                </label>
+
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={nationalId}
+                  onChange={(event) => {
+                    setNationalId(
+                      event.target.value.replace(
+                        /[^0-9]/g,
+                        ""
+                      )
+                    );
+                    setError("");
+                  }}
+                  placeholder="کد ملی ۱۰ رقمی"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-black text-slate-700">
+                  کد پرسنلی
+                </label>
+
+                <input
+                  type="text"
+                  value={personnelCode}
+                  onChange={(event) => {
+                    setPersonnelCode(
+                      event.target.value
+                    );
+                    setError("");
+                  }}
+                  placeholder="کد پرسنلی"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-xl bg-red-50 px-3 py-2.5 text-center text-xs font-bold text-red-700">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="rounded-xl bg-emerald-50 px-3 py-2.5 text-center text-xs font-bold text-emerald-700">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={requestRecovery}
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-black text-white shadow transition hover:bg-blue-800 disabled:opacity-50"
+              >
+                {loading
+                  ? "در حال بررسی..."
+                  : "🔐 ایجاد کد بازیابی"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                  setSuccess("");
+                }}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-100"
+              >
+                ← بازگشت به ورود
+              </button>
+
+            </div>
+          </section>
+        )}
+
+        {/* ================= VERIFY / RESET ================= */}
+
+        {!employee && mode === "verify" && (
+          <section className="mx-auto max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-5 text-center">
+
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-xl">
+                🔐
+              </div>
+
+              <h2 className="mt-2 text-lg font-black text-slate-950">
+                بازیابی رمز عبور
+              </h2>
+
+              <p className="mt-1 text-[11px] leading-6 text-slate-500">
+                کد بازیابی را وارد کنید و رمز جدید خود را تعیین کنید.
+              </p>
+
+            </div>
+
+            <div className="space-y-4 p-5">
+
+              {/* Test code */}
+              {serverRecoveryCode && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+
+                  <div className="text-[10px] font-bold text-amber-700">
+                    کد بازیابی آزمایشی
+                  </div>
+
+                  <div className="mt-2 text-2xl font-black tracking-[0.35em] text-amber-900">
+                    {serverRecoveryCode}
+                  </div>
+
+                  <div className="mt-2 text-[10px] leading-5 text-amber-700">
+                    این بخش فعلاً برای تست بدون SMS نمایش داده می‌شود.
+                    بعداً همین کد از طریق پیامک ارسال خواهد شد.
+                  </div>
+
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1.5 block text-xs font-black text-slate-700">
+                  کد بازیابی
+                </label>
+
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={recoveryCode}
+                  onChange={(event) => {
+                    setRecoveryCode(
+                      event.target.value.replace(
+                        /[^0-9]/g,
+                        ""
+                      )
+                    );
+                    setError("");
+                  }}
+                  placeholder="کد ۶ رقمی"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-center text-lg font-black tracking-[0.3em] outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-black text-slate-700">
+                  رمز عبور جدید
+                </label>
+
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => {
+                    setNewPassword(
+                      event.target.value
+                    );
+                    setError("");
+                  }}
+                  placeholder="حداقل ۴ کاراکتر"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-black text-slate-700">
+                  تکرار رمز عبور جدید
+                </label>
+
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(
+                      event.target.value
+                    );
+                    setError("");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      resetPassword();
+                    }
+                  }}
+                  placeholder="تکرار رمز عبور"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-xl bg-red-50 px-3 py-2.5 text-center text-xs font-bold text-red-700">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="rounded-xl bg-emerald-50 px-3 py-2.5 text-center text-xs font-bold text-emerald-700">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={resetPassword}
+                disabled={loading}
+                className="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-black text-white shadow transition hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {loading
+                  ? "در حال تغییر رمز..."
+                  : "✅ تغییر رمز عبور"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                  setSuccess("");
+                  setServerRecoveryCode("");
+                }}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-100"
+              >
+                ← بازگشت به ورود
+              </button>
+
+            </div>
+          </section>
+        )}
+
+        {/* ================= EMPLOYEE + MONTHS ================= */}
+
         {employee && !selectedPayslip && (
           <>
             <section className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
+
               <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
+
                 <div className="min-w-0">
+
                   <div className="text-[10px] font-bold text-slate-500">
                     کارمند وارد شده
                   </div>
@@ -740,6 +1247,7 @@ export default function PayslipPage() {
                       {employee.personnel_code || "—"}
                     </span>
                   </div>
+
                 </div>
 
                 <button
@@ -749,11 +1257,14 @@ export default function PayslipPage() {
                 >
                   خروج
                 </button>
+
               </div>
             </section>
 
             <section>
+
               <div className="mb-3 flex items-center justify-between">
+
                 <div>
                   <h2 className="text-lg font-black text-slate-950">
                     فیش‌های حقوقی
@@ -767,6 +1278,7 @@ export default function PayslipPage() {
                 <div className="rounded-lg bg-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-600">
                   {months.length.toLocaleString("fa-IR")} فیش
                 </div>
+
               </div>
 
               {error && (
@@ -775,13 +1287,18 @@ export default function PayslipPage() {
                 </div>
               )}
 
-              {/* Desktop Table */}
+              {/* Desktop */}
               <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md md:block">
+
                 <div className="grid grid-cols-[1fr_1fr_2fr_1fr] items-center bg-slate-100 px-4 py-2.5 text-[11px] font-black text-slate-600">
+
                   <div>دوره حقوق</div>
                   <div>سال</div>
                   <div>خالص پرداختی</div>
-                  <div className="text-center">عملیات</div>
+                  <div className="text-center">
+                    عملیات
+                  </div>
+
                 </div>
 
                 {months.map((item, index) => (
@@ -789,6 +1306,7 @@ export default function PayslipPage() {
                     key={item.id || index}
                     className="grid grid-cols-[1fr_1fr_2fr_1fr] items-center border-t border-slate-200 px-4 py-2.5 transition hover:bg-blue-50"
                   >
+
                     <div className="text-xs font-black text-slate-900">
                       {valueOrDash(item.month)}
                     </div>
@@ -802,6 +1320,7 @@ export default function PayslipPage() {
                     </div>
 
                     <div className="text-center">
+
                       <button
                         type="button"
                         disabled={loading}
@@ -815,13 +1334,17 @@ export default function PayslipPage() {
                       >
                         مشاهده فیش ←
                       </button>
+
                     </div>
+
                   </div>
                 ))}
+
               </div>
 
               {/* Mobile */}
               <div className="space-y-2 md:hidden">
+
                 {months.map((item, index) => (
                   <button
                     key={item.id || index}
@@ -835,7 +1358,9 @@ export default function PayslipPage() {
                     }
                     className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-right shadow-sm transition active:bg-blue-50 disabled:opacity-50"
                   >
+
                     <div className="min-w-0">
+
                       <div className="text-[10px] font-bold text-slate-500">
                         دوره حقوق
                       </div>
@@ -847,9 +1372,11 @@ export default function PayslipPage() {
                       <div className="mt-0.5 text-[10px] text-slate-500">
                         سال {valueOrDash(item.year)}
                       </div>
+
                     </div>
 
                     <div className="text-left">
+
                       <div className="text-[10px] font-bold text-slate-500">
                         خالص پرداختی
                       </div>
@@ -861,15 +1388,20 @@ export default function PayslipPage() {
                       <div className="mt-1 text-[10px] font-black text-blue-700">
                         مشاهده فیش ←
                       </div>
+
                     </div>
+
                   </button>
                 ))}
+
               </div>
+
             </section>
           </>
         )}
 
-        {/* Selected Payslip */}
+        {/* ================= SELECTED PAYSLIP ================= */}
+
         {selectedPayslip && (
           <PayslipDocument
             payslip={selectedPayslip}
@@ -884,6 +1416,7 @@ export default function PayslipPage() {
         <footer className="py-5 text-center text-[10px] text-slate-500">
           © سیستم حقوق و دستمزد چابکان
         </footer>
+
       </div>
     </main>
   );
