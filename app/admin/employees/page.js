@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
@@ -11,6 +11,7 @@ const emptyForm = {
   department: "",
   jobGroup: "",
   role: "",
+  companyId: "",
 };
 
 function textValue(value) {
@@ -34,10 +35,13 @@ function getExcelValue(row, keys) {
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
+  const [companies, setCompanies] = useState([]);
+
   const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
 
@@ -73,8 +77,32 @@ export default function EmployeesPage() {
     }
   }
 
+  async function loadCompanies() {
+    try {
+      setLoadingCompanies(true);
+
+      const response = await fetch("/api/companies", {
+        cache: "no-store",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setCompanies(Array.isArray(result.data) ? result.data : []);
+      } else {
+        alert(result.error || "خطا در دریافت شرکت‌ها");
+      }
+    } catch (error) {
+      console.error("Load companies error:", error);
+      alert("خطا در دریافت فهرست شرکت‌ها");
+    } finally {
+      setLoadingCompanies(false);
+    }
+  }
+
   useEffect(() => {
     loadEmployees();
+    loadCompanies();
   }, []);
 
   function updateForm(field, value) {
@@ -91,6 +119,11 @@ export default function EmployeesPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (!form.companyId) {
+      alert("لطفاً شرکت را انتخاب کنید.");
+      return;
+    }
 
     if (!form.name.trim()) {
       alert("نام و نام خانوادگی را وارد کنید.");
@@ -119,6 +152,7 @@ export default function EmployeesPage() {
         },
         body: JSON.stringify({
           id: editingId,
+          company_id: Number(form.companyId),
           full_name: form.name.trim(),
           national_id: form.nationalId.trim(),
           personnel_code: form.personnelCode.trim(),
@@ -161,6 +195,7 @@ export default function EmployeesPage() {
       department: textValue(employee.department),
       jobGroup: textValue(employee.job_group),
       role: textValue(employee.job_title),
+      companyId: textValue(employee.company_id),
     });
 
     setEditingId(employee.id);
@@ -188,6 +223,11 @@ export default function EmployeesPage() {
       return;
     }
 
+    if (!passwordEmployee.company_id) {
+      alert("این کارمند هنوز به هیچ شرکتی متصل نیست. ابتدا شرکت را برای او تعیین کنید.");
+      return;
+    }
+
     try {
       setSavingPassword(true);
 
@@ -198,6 +238,7 @@ export default function EmployeesPage() {
         },
         body: JSON.stringify({
           id: passwordEmployee.id,
+          company_id: Number(passwordEmployee.company_id),
           full_name: textValue(passwordEmployee.full_name),
           national_id: textValue(passwordEmployee.national_id),
           personnel_code: textValue(passwordEmployee.personnel_code),
@@ -356,6 +397,15 @@ export default function EmployeesPage() {
             "job_title",
             "JobTitle",
           ]),
+
+          company_name: getExcelValue(row, [
+            "شرکت",
+            "نام شرکت",
+            "company",
+            "company_name",
+            "Company",
+            "CompanyName",
+          ]),
         }))
         .filter(
           (employee) =>
@@ -371,8 +421,45 @@ export default function EmployeesPage() {
         return;
       }
 
+      const mappedEmployees = [];
+
+      for (const employee of importedEmployees) {
+        let companyId = "";
+
+        if (employee.company_name) {
+          const foundCompany = companies.find(
+            (company) =>
+              textValue(company.name).toLowerCase() ===
+              textValue(employee.company_name).toLowerCase()
+          );
+
+          if (foundCompany) {
+            companyId = foundCompany.id;
+          }
+        }
+
+        mappedEmployees.push({
+          ...employee,
+          company_id: companyId,
+        });
+      }
+
+      const withoutCompany = mappedEmployees.filter(
+        (employee) => !employee.company_id
+      );
+
+      if (withoutCompany.length > 0) {
+        alert(
+          `${withoutCompany.length.toLocaleString(
+            "fa-IR"
+          )} ردیف Excel به شرکت معتبر متصل نشد.\n\n` +
+            "نام شرکت در Excel باید دقیقاً مطابق نام شرکت ثبت‌شده در سامانه باشد."
+        );
+        return;
+      }
+
       const confirmed = window.confirm(
-        importedEmployees.length.toLocaleString("fa-IR") +
+        mappedEmployees.length.toLocaleString("fa-IR") +
           " پرسنل از Excel شناسایی شد.\n\nآیا ثبت گروهی را شروع می‌کنید؟"
       );
 
@@ -383,14 +470,23 @@ export default function EmployeesPage() {
       let successCount = 0;
       let errorCount = 0;
 
-      for (const employee of importedEmployees) {
+      for (const employee of mappedEmployees) {
         try {
           const response = await fetch("/api/personnel", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(employee),
+            body: JSON.stringify({
+              company_id: Number(employee.company_id),
+              full_name: employee.full_name,
+              national_id: employee.national_id,
+              personnel_code: employee.personnel_code,
+              bank_account: employee.bank_account,
+              department: employee.department,
+              job_group: employee.job_group,
+              job_title: employee.job_title,
+            }),
           });
 
           const result = await response.json();
@@ -441,6 +537,7 @@ export default function EmployeesPage() {
         "واحد": "مالی",
         "گروه شغلی": "کارشناس",
         "عنوان شغلی": "کارشناس مالی",
+        "شرکت": companies[0]?.name || "نام شرکت",
       },
     ];
 
@@ -475,6 +572,7 @@ export default function EmployeesPage() {
       employee.job_group,
       employee.job_title,
       employee.bank_account,
+      employee.company_name,
     ]
       .map((item) => textValue(item).toLowerCase())
       .some((item) => item.includes(value));
@@ -496,7 +594,7 @@ export default function EmployeesPage() {
 
             <div>
               <div className="mb-1 text-xs font-medium text-indigo-100">
-                سیستم حقوق و دستمزد چابکان
+                سیستم حقوق و دستمزد
               </div>
 
               <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -522,7 +620,10 @@ export default function EmployeesPage() {
 
               <button
                 type="button"
-                onClick={loadEmployees}
+                onClick={() => {
+                  loadEmployees();
+                  loadCompanies();
+                }}
                 className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-indigo-700 shadow-lg transition hover:bg-indigo-50"
               >
                 ↻ بروزرسانی
@@ -567,6 +668,43 @@ export default function EmployeesPage() {
             <form onSubmit={handleSubmit}>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
+                {/* شرکت */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                    شرکت *
+                  </label>
+
+                  <select
+                    className={inputClass}
+                    value={form.companyId}
+                    onChange={(event) =>
+                      updateForm("companyId", event.target.value)
+                    }
+                    disabled={loadingCompanies}
+                  >
+                    <option value="">
+                      {loadingCompanies
+                        ? "در حال دریافت شرکت‌ها..."
+                        : "انتخاب شرکت"}
+                    </option>
+
+                    {companies.map((company) => (
+                      <option
+                        key={company.id}
+                        value={company.id}
+                      >
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {!loadingCompanies && companies.length === 0 && (
+                    <p className="mt-1 text-[11px] font-semibold text-red-500">
+                      ابتدا از بخش «شرکت‌ها» یک شرکت ثبت کنید.
+                    </p>
+                  )}
+                </div>
 
                 <div>
                   <label className="mb-1.5 block text-xs font-bold text-slate-600">
@@ -698,7 +836,7 @@ export default function EmployeesPage() {
 
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || loadingCompanies || companies.length === 0}
                   className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving
@@ -746,7 +884,9 @@ export default function EmployeesPage() {
               <p className="text-xs leading-6 text-slate-500">
                 فایل Excel را انتخاب کنید.
                 <br />
-                نام، کد ملی و کد پرسنلی الزامی است.
+                نام، کد ملی، کد پرسنلی و شرکت الزامی است.
+                <br />
+                نام شرکت باید با نام ثبت‌شده در سامانه یکسان باشد.
               </p>
 
               <input
@@ -759,7 +899,7 @@ export default function EmployeesPage() {
 
               <button
                 type="button"
-                disabled={importing}
+                disabled={importing || companies.length === 0}
                 onClick={() =>
                   fileInputRef.current?.click()
                 }
@@ -815,12 +955,19 @@ export default function EmployeesPage() {
               </div>
 
               <div className="mb-4 rounded-xl bg-indigo-50 p-3 text-xs text-indigo-700">
-                کد پرسنلی:{" "}
+                شرکت:{" "}
                 <strong>
-                  {textValue(
-                    passwordEmployee.personnel_code
-                  ) || "-"}
+                  {textValue(passwordEmployee.company_name) || "-"}
                 </strong>
+                <br />
+                <span className="inline-block mt-1">
+                  کد پرسنلی:{" "}
+                  <strong>
+                    {textValue(
+                      passwordEmployee.personnel_code
+                    ) || "-"}
+                  </strong>
+                </span>
               </div>
 
               <div>
@@ -903,7 +1050,7 @@ export default function EmployeesPage() {
                   onChange={(event) =>
                     setSearch(event.target.value)
                   }
-                  placeholder="جستجو نام، کد ملی، کد پرسنلی..."
+                  placeholder="جستجو نام، شرکت، کد ملی، کد پرسنلی..."
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-4 pl-10 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
                 />
 
@@ -917,13 +1064,17 @@ export default function EmployeesPage() {
 
           <div className="overflow-x-auto">
 
-            <table className="w-full min-w-[1100px] border-collapse text-right text-[12px]">
+            <table className="w-full min-w-[1250px] border-collapse text-right text-[12px]">
 
               <thead>
                 <tr className="bg-slate-800 text-white">
 
                   <th className="px-3 py-3 text-center font-bold">
                     ردیف
+                  </th>
+
+                  <th className="px-3 py-3 font-bold">
+                    شرکت
                   </th>
 
                   <th className="px-3 py-3 font-bold">
@@ -966,7 +1117,7 @@ export default function EmployeesPage() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="py-12 text-center text-sm text-slate-400"
                     >
                       در حال دریافت اطلاعات کارکنان...
@@ -975,7 +1126,7 @@ export default function EmployeesPage() {
                 ) : filteredEmployees.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="py-12 text-center"
                     >
                       <div className="text-3xl">
@@ -1001,6 +1152,18 @@ export default function EmployeesPage() {
                       <td className="px-3 py-3 text-center font-bold text-slate-400">
                         {(index + 1).toLocaleString(
                           "fa-IR"
+                        )}
+                      </td>
+
+                      <td className="px-3 py-3">
+                        {textValue(employee.company_name) ? (
+                          <span className="rounded-lg bg-emerald-50 px-2.5 py-1 font-bold text-emerald-700">
+                            {textValue(employee.company_name)}
+                          </span>
+                        ) : (
+                          <span className="rounded-lg bg-red-50 px-2.5 py-1 font-bold text-red-600">
+                            بدون شرکت
+                          </span>
                         )}
                       </td>
 
@@ -1050,7 +1213,6 @@ export default function EmployeesPage() {
                         ) || "-"}
                       </td>
 
-                      {/* عملیات - فقط یک بار */}
                       <td className="px-3 py-3">
 
                         <div className="flex items-center justify-center gap-1.5">

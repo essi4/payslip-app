@@ -168,11 +168,14 @@ export default function CompaniesPage() {
       className="min-h-screen bg-slate-100 px-3 py-5 text-slate-800 sm:px-5 lg:px-8"
     >
       <div className="mx-auto max-w-[1200px]">
+
+        {/* Header */}
         <section className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-l from-indigo-700 via-indigo-600 to-violet-600 p-5 text-white shadow-xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
             <div>
               <div className="mb-1 text-xs font-medium text-indigo-100">
-                سیستم حقوق و دستمزد چابکان
+                سیستم حقوق و دستمزد
               </div>
 
               <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -193,14 +196,20 @@ export default function CompaniesPage() {
                 {companies.length.toLocaleString("fa-IR")}
               </div>
             </div>
+
           </div>
         </section>
 
+        {/* Form */}
         <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
           <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+
             <div>
               <h2 className="text-lg font-extrabold text-slate-800">
-                {editingId !== null ? "ویرایش شرکت" : "ثبت شرکت جدید"}
+                {editingId !== null
+                  ? "ویرایش شرکت"
+                  : "ثبت شرکت جدید"}
               </h2>
 
               <p className="mt-1 text-xs text-slate-400">
@@ -217,10 +226,13 @@ export default function CompaniesPage() {
                 انصراف از ویرایش
               </button>
             )}
+
           </div>
 
           <form onSubmit={handleSubmit}>
+
             <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+
               <div>
                 <label className="mb-2 block text-xs font-bold text-slate-600">
                   نام شرکت *
@@ -241,6 +253,7 @@ export default function CompaniesPage() {
               </div>
 
               <div className="flex items-end gap-2">
+
                 <button
                   type="submit"
                   disabled={saving}
@@ -260,14 +273,21 @@ export default function CompaniesPage() {
                 >
                   پاک کردن
                 </button>
+
               </div>
+
             </div>
+
           </form>
         </section>
 
+        {/* Company List */}
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
           <div className="border-b border-slate-100 p-4 sm:p-5">
+
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
               <div>
                 <h2 className="text-lg font-extrabold text-slate-800">
                   فهرست شرکت‌ها
@@ -280,37 +300,57 @@ export default function CompaniesPage() {
               </div>
 
               <div className="w-full sm:w-80">
+
                 <input
                   type="text"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) =>
+                    setSearch(event.target.value)
+                  }
                   placeholder="جستجوی نام شرکت..."
                   className={inputClass}
                 />
+
               </div>
+
             </div>
+
           </div>
 
           <div className="overflow-x-auto">
+
             <table className="w-full min-w-[650px] border-collapse text-right text-sm">
+
               <thead>
                 <tr className="bg-slate-800 text-white">
-                  <th className="px-4 py-3 text-center font-bold">ردیف</th>
-                  <th className="px-4 py-3 font-bold">نام شرکت</th>
+
+                  <th className="px-4 py-3 text-center font-bold">
+                    ردیف
+                  </th>
+
+                  <th className="px-4 py-3 font-bold">
+                    نام شرکت
+                  </th>
+
                   <th className="px-4 py-3 text-center font-bold">
                     تعداد پرسنل
                   </th>
+
                   <th className="px-4 py-3 text-center font-bold">
                     تاریخ ثبت
                   </th>
+
                   <th className="px-4 py-3 text-center font-bold">
                     عملیات
                   </th>
+
                 </tr>
               </thead>
 
               <tbody>
+
                 {loading ? (
+
                   <tr>
                     <td
                       colSpan="5"
@@ -319,10 +359,18 @@ export default function CompaniesPage() {
                       در حال دریافت شرکت‌ها...
                     </td>
                   </tr>
+
                 ) : filteredCompanies.length === 0 ? (
+
                   <tr>
-                    <td colSpan="5" className="py-12 text-center">
-                      <div className="text-4xl">🏢</div>
+                    <td
+                      colSpan="5"
+                      className="py-12 text-center"
+                    >
+
+                      <div className="text-4xl">
+                        🏢
+                      </div>
 
                       <div className="mt-2 text-sm font-bold text-slate-500">
                         هنوز شرکتی ثبت نشده است
@@ -331,20 +379,27 @@ export default function CompaniesPage() {
                       <div className="mt-1 text-xs text-slate-400">
                         از قسمت بالا شرکت جدید ثبت کنید.
                       </div>
+
                     </td>
                   </tr>
+
                 ) : (
+
                   filteredCompanies.map((company, index) => (
+
                     <tr
                       key={company.id}
                       className="border-b border-slate-100 transition hover:bg-indigo-50/50"
                     >
+
                       <td className="px-4 py-3 text-center font-bold text-slate-400">
                         {(index + 1).toLocaleString("fa-IR")}
                       </td>
 
                       <td className="px-4 py-3">
+
                         <div className="flex items-center gap-3">
+
                           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-lg">
                             🏢
                           </div>
@@ -352,31 +407,44 @@ export default function CompaniesPage() {
                           <span className="font-bold text-slate-700">
                             {company.name || "-"}
                           </span>
+
                         </div>
+
                       </td>
 
                       <td className="px-4 py-3 text-center">
+
                         <span className="rounded-lg bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+
                           {Number(
                             company.employee_count || 0
-                          ).toLocaleString("fa-IR")}{" "}
-                          نفر
+                          ).toLocaleString("fa-IR")}
+
+                          {" "}نفر
+
                         </span>
+
                       </td>
 
                       <td className="px-4 py-3 text-center text-xs text-slate-500">
+
                         {company.created_at
                           ? new Date(
                               company.created_at
                             ).toLocaleDateString("fa-IR")
                           : "-"}
+
                       </td>
 
                       <td className="px-4 py-3">
+
                         <div className="flex items-center justify-center gap-2">
+
                           <button
                             type="button"
-                            onClick={() => handleEdit(company)}
+                            onClick={() =>
+                              handleEdit(company)
+                            }
                             className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
                           >
                             ویرایش
@@ -384,26 +452,38 @@ export default function CompaniesPage() {
 
                           <button
                             type="button"
-                            onClick={() => handleDelete(company)}
+                            onClick={() =>
+                              handleDelete(company)
+                            }
                             className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-100"
                           >
                             حذف
                           </button>
+
                         </div>
+
                       </td>
+
                     </tr>
+
                   ))
+
                 )}
+
               </tbody>
+
             </table>
+
           </div>
 
+          {/* Footer */}
           <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+
             <span>
               تعداد کل:
               <strong className="mr-1 text-slate-700">
                 {companies.length.toLocaleString("fa-IR")}
-              </strong>{" "}
+              </strong>
               شرکت
             </span>
 
@@ -414,8 +494,11 @@ export default function CompaniesPage() {
             >
               ↻ بروزرسانی
             </button>
+
           </div>
+
         </section>
+
       </div>
     </main>
   );

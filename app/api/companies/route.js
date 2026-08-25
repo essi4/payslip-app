@@ -178,6 +178,7 @@ export async function DELETE(request) {
       );
     }
 
+    // بررسی وجود کارمند در شرکت
     const employeeCheck = await pool.query(
       `
         SELECT COUNT(*)::int AS count
@@ -193,7 +194,8 @@ export async function DELETE(request) {
       return NextResponse.json(
         {
           success: false,
-          error: `این شرکت دارای ${employeeCount} کارمند است و فعلاً قابل حذف نیست.`,
+          error:
+            `این شرکت دارای ${employeeCount} کارمند است و فعلاً قابل حذف نیست.`,
         },
         { status: 400 }
       );
