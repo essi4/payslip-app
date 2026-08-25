@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   ShieldCheck,
   TrendingUp,
+  Building2,
 } from "lucide-react";
 
 function number(value) {
@@ -89,7 +90,7 @@ export default function AdminPage() {
       value: number(data.employeesCount),
       description: "کارکنان ثبت شده",
       icon: Users,
-      iconClass: "bg-blue-50 text-blue-700",
+      iconClass: "bg-slate-100 text-slate-800",
       link: "/admin/employees",
     },
     {
@@ -97,7 +98,7 @@ export default function AdminPage() {
       value: number(data.payslipsCount),
       description: "فیش ثبت شده",
       icon: FileText,
-      iconClass: "bg-emerald-50 text-emerald-700",
+      iconClass: "bg-slate-100 text-slate-800",
       link: "/admin/payslips",
     },
     {
@@ -105,7 +106,7 @@ export default function AdminPage() {
       value: money(data.totalNetSalary),
       description: "مجموع خالص فیش‌ها",
       icon: Wallet,
-      iconClass: "bg-violet-50 text-violet-700",
+      iconClass: "bg-slate-100 text-slate-800",
       link: "/admin/payslips",
     },
     {
@@ -113,7 +114,7 @@ export default function AdminPage() {
       value: "فعال",
       description: "اتصال برقرار است",
       icon: ShieldCheck,
-      iconClass: "bg-cyan-50 text-cyan-700",
+      iconClass: "bg-slate-100 text-slate-800",
       link: null,
     },
   ];
@@ -124,83 +125,91 @@ export default function AdminPage() {
       description: "ثبت و مدیریت کارکنان",
       icon: Users,
       href: "/admin/employees",
-      className: "text-blue-700",
+    },
+    {
+      title: "شرکت‌ها",
+      description: "ثبت و مدیریت شرکت‌ها",
+      icon: Building2,
+      href: "/admin/companies",
     },
     {
       title: "فیش‌های حقوقی",
       description: "ثبت و مدیریت فیش‌ها",
       icon: FileText,
       href: "/admin/payslips",
-      className: "text-emerald-700",
     },
     {
-      title: "اصلاح فیش‌ها",
+      title: "اصلاحات فیش‌ها",
       description: "بررسی و اصلاح فیش‌ها",
       icon: Wrench,
       href: "/admin/corrections",
-      className: "text-orange-700",
     },
     {
       title: "گزارش‌ها",
       description: "گزارش‌های سیستم",
       icon: BarChart3,
       href: "/admin/reports",
-      className: "text-violet-700",
     },
     {
       title: "تنظیمات",
       description: "تنظیمات سامانه",
       icon: Settings,
       href: "/admin/settings",
-      className: "text-slate-700",
     },
   ];
 
   return (
-    <div dir="rtl" className="space-y-6">
+    <div
+      dir="rtl"
+      className="min-h-screen space-y-6 bg-slate-100 p-4 sm:p-5 lg:p-6"
+    >
 
       {/* HEADER */}
-      <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-          <div>
-            <div className="mb-1 text-[11px] font-bold text-blue-700">
-              داشبورد مدیریت
+        <div className="bg-slate-900 px-5 py-6 sm:px-6">
+
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+
+            <div>
+              <div className="mb-2 text-[11px] font-bold text-slate-300">
+                داشبورد مدیریت
+              </div>
+
+              <h1 className="text-xl font-black text-white sm:text-2xl">
+                نمای کلی سامانه
+              </h1>
+
+              <p className="mt-2 text-xs text-slate-300">
+                مدیریت کارکنان و فیش‌های حقوقی
+              </p>
             </div>
 
-            <h1 className="text-xl font-black text-slate-950">
-              نمای کلی سامانه
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
 
-            <p className="mt-1 text-xs text-slate-500">
-              مدیریت کارکنان و فیش‌های حقوقی
-            </p>
-          </div>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                سامانه فعال است
+              </div>
 
-          <div className="flex items-center gap-2">
+              <button
+                onClick={() => loadDashboard(true)}
+                disabled={refreshing}
+                className="flex items-center gap-2 rounded-xl border border-slate-600 bg-white px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-100 disabled:opacity-50"
+              >
+                <RefreshCw
+                  size={14}
+                  className={refreshing ? "animate-spin" : ""}
+                />
 
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              سامانه فعال است
+                بروزرسانی
+              </button>
+
             </div>
-
-            <button
-              onClick={() => loadDashboard(true)}
-              disabled={refreshing}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-            >
-              <RefreshCw
-                size={14}
-                className={
-                  refreshing ? "animate-spin" : ""
-                }
-              />
-
-              بروزرسانی
-            </button>
-
           </div>
+
         </div>
+
       </section>
 
       {/* ERROR */}
@@ -229,7 +238,7 @@ export default function AdminPage() {
             const Icon = card.icon;
 
             const content = (
-              <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+              <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md">
 
                 <div className="flex items-center justify-between gap-3">
 
@@ -258,7 +267,7 @@ export default function AdminPage() {
                 </div>
 
                 {card.link && (
-                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[10px] font-bold text-blue-700">
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[10px] font-bold text-slate-800">
                     مدیریت
                     <ArrowLeft size={12} />
                   </div>
@@ -282,6 +291,7 @@ export default function AdminPage() {
           })}
 
         </div>
+
       </section>
 
       {/* FINANCIAL */}
@@ -299,15 +309,15 @@ export default function AdminPage() {
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
 
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70 text-blue-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
                 <TrendingUp size={18} />
               </div>
 
               <div>
-                <div className="text-[11px] font-bold text-blue-700">
+                <div className="text-[11px] font-bold text-slate-600">
                   حقوق پایه
                 </div>
 
@@ -321,15 +331,15 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70 text-emerald-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800 text-white">
                 <Wallet size={18} />
               </div>
 
               <div>
-                <div className="text-[11px] font-bold text-emerald-700">
+                <div className="text-[11px] font-bold text-slate-600">
                   مزایا
                 </div>
 
@@ -343,15 +353,15 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70 text-red-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-700 text-white">
                 <Receipt size={18} />
               </div>
 
               <div>
-                <div className="text-[11px] font-bold text-red-700">
+                <div className="text-[11px] font-bold text-slate-600">
                   کسورات
                 </div>
 
@@ -366,6 +376,7 @@ export default function AdminPage() {
           </div>
 
         </div>
+
       </section>
 
       {/* QUICK ACCESS */}
@@ -381,7 +392,7 @@ export default function AdminPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
 
           {quickLinks.map((item) => {
             const Icon = item.icon;
@@ -390,12 +401,12 @@ export default function AdminPage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md"
               >
-                <Icon
-                  size={21}
-                  className={item.className}
-                />
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white transition group-hover:bg-slate-800">
+                  <Icon size={19} />
+                </div>
 
                 <h3 className="mt-3 text-xs font-black text-slate-900">
                   {item.title}
@@ -404,13 +415,16 @@ export default function AdminPage() {
                 <p className="mt-1.5 text-[10px] leading-5 text-slate-500">
                   {item.description}
                 </p>
+
               </Link>
             );
           })}
 
         </div>
+
       </section>
 
     </div>
   );
 }
+

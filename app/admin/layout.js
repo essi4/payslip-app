@@ -62,19 +62,19 @@ export default function AdminLayout({ children }) {
         {/* =========================
             Sidebar
         ========================== */}
-        <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 border-l border-slate-200 bg-white shadow-sm lg:block">
+        <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 border-l border-slate-700 bg-slate-900 shadow-xl lg:block">
 
           {/* Logo */}
-          <div className="flex h-20 items-center border-b border-slate-100 px-5">
+          <div className="flex h-20 items-center border-b border-slate-700 px-5">
 
             <div className="flex items-center gap-3">
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl text-white shadow-lg">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-xl text-white shadow-lg">
                 💼
               </div>
 
               <div>
-                <div className="text-sm font-extrabold text-slate-800">
+                <div className="text-sm font-extrabold text-white">
                   مدیریت حقوق و دستمزد
                 </div>
 
@@ -90,7 +90,7 @@ export default function AdminLayout({ children }) {
           {/* Menu */}
           <nav className="px-3 py-5">
 
-            <div className="mb-3 px-3 text-[10px] font-bold text-slate-400">
+            <div className="mb-3 px-3 text-[10px] font-bold text-slate-500">
               منوی اصلی
             </div>
 
@@ -106,8 +106,8 @@ export default function AdminLayout({ children }) {
                     className={[
                       "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition",
                       active
-                        ? "bg-indigo-600 text-white shadow-md"
-                        : "text-slate-600 hover:bg-indigo-50 hover:text-indigo-700",
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-white",
                     ].join(" ")}
                   >
 
@@ -116,7 +116,7 @@ export default function AdminLayout({ children }) {
                         "flex h-8 w-8 items-center justify-center rounded-lg text-base",
                         active
                           ? "bg-white/15"
-                          : "bg-slate-100",
+                          : "bg-slate-800",
                       ].join(" ")}
                     >
                       {item.icon}
@@ -133,11 +133,11 @@ export default function AdminLayout({ children }) {
           </nav>
 
           {/* Bottom */}
-          <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 p-4">
+          <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 p-4">
 
-            <div className="rounded-xl bg-slate-50 p-3">
+            <div className="rounded-xl bg-slate-800 p-3">
 
-              <div className="text-[11px] font-bold text-slate-500">
+              <div className="text-[11px] font-bold text-slate-400">
                 وضعیت سامانه
               </div>
 
@@ -145,7 +145,7 @@ export default function AdminLayout({ children }) {
 
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
 
-                <span className="text-xs font-bold text-emerald-600">
+                <span className="text-xs font-bold text-emerald-400">
                   سیستم فعال است
                 </span>
 
@@ -162,16 +162,16 @@ export default function AdminLayout({ children }) {
         ========================== */}
         <div className="w-full lg:hidden">
 
-          <div className="border-b border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <div className="border-b border-slate-700 bg-slate-900 px-4 py-4 shadow-sm">
 
             <div className="mb-4 flex items-center gap-3">
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
                 💼
               </div>
 
               <div>
-                <div className="text-sm font-extrabold">
+                <div className="text-sm font-extrabold text-white">
                   مدیریت حقوق و دستمزد
                 </div>
 
@@ -194,8 +194,8 @@ export default function AdminLayout({ children }) {
                     className={[
                       "flex items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-xs font-bold transition",
                       active
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700",
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white",
                     ].join(" ")}
                   >
                     <span>{item.icon}</span>
