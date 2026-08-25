@@ -70,7 +70,9 @@ export default function AdminPage() {
       });
     } catch (err) {
       console.error(err);
-      setError(err.message || "خطا در اتصال به سرور");
+      setError(
+        err.message || "خطا در اتصال به سرور"
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -83,12 +85,11 @@ export default function AdminPage() {
 
   const cards = [
     {
-      title: "تعداد کارکنان",
+      title: "کارکنان",
       value: number(data.employeesCount),
       description: "کارکنان ثبت شده",
       icon: Users,
-      box: "bg-blue-50",
-      iconColor: "text-blue-700",
+      iconClass: "bg-blue-50 text-blue-700",
       link: "/admin/employees",
     },
     {
@@ -96,8 +97,7 @@ export default function AdminPage() {
       value: number(data.payslipsCount),
       description: "فیش ثبت شده",
       icon: FileText,
-      box: "bg-emerald-50",
-      iconColor: "text-emerald-700",
+      iconClass: "bg-emerald-50 text-emerald-700",
       link: "/admin/payslips",
     },
     {
@@ -105,65 +105,92 @@ export default function AdminPage() {
       value: money(data.totalNetSalary),
       description: "مجموع خالص فیش‌ها",
       icon: Wallet,
-      box: "bg-purple-50",
-      iconColor: "text-purple-700",
+      iconClass: "bg-violet-50 text-violet-700",
       link: "/admin/payslips",
     },
     {
-      title: "وضعیت سیستم",
-      value: "آنلاین",
-      description: "اتصال به سیستم برقرار است",
+      title: "وضعیت سامانه",
+      value: "فعال",
+      description: "اتصال برقرار است",
       icon: ShieldCheck,
-      box: "bg-cyan-50",
-      iconColor: "text-cyan-700",
+      iconClass: "bg-cyan-50 text-cyan-700",
       link: null,
     },
   ];
 
+  const quickLinks = [
+    {
+      title: "کارکنان",
+      description: "ثبت و مدیریت کارکنان",
+      icon: Users,
+      href: "/admin/employees",
+      className: "text-blue-700",
+    },
+    {
+      title: "فیش‌های حقوقی",
+      description: "ثبت و مدیریت فیش‌ها",
+      icon: FileText,
+      href: "/admin/payslips",
+      className: "text-emerald-700",
+    },
+    {
+      title: "اصلاح فیش‌ها",
+      description: "بررسی و اصلاح فیش‌ها",
+      icon: Wrench,
+      href: "/admin/corrections",
+      className: "text-orange-700",
+    },
+    {
+      title: "گزارش‌ها",
+      description: "گزارش‌های سیستم",
+      icon: BarChart3,
+      href: "/admin/reports",
+      className: "text-violet-700",
+    },
+    {
+      title: "تنظیمات",
+      description: "تنظیمات سامانه",
+      icon: Settings,
+      href: "/admin/settings",
+      className: "text-slate-700",
+    },
+  ];
+
   return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-slate-50 p-3 sm:p-5"
-    >
+    <div dir="rtl" className="space-y-6">
+
       {/* HEADER */}
+      <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-      <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-l from-slate-950 via-blue-950 to-blue-700 p-6 text-white shadow-xl">
-        <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-blue-400/10" />
-
-        <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                <BarChart3 size={21} />
-              </div>
-
-              <span className="text-xs font-bold text-blue-200">
-                داشبورد مدیریتی
-              </span>
+            <div className="mb-1 text-[11px] font-bold text-blue-700">
+              داشبورد مدیریت
             </div>
 
-            <h1 className="text-2xl font-black">
-              پنل مدیریت چابکان
+            <h1 className="text-xl font-black text-slate-950">
+              نمای کلی سامانه
             </h1>
 
-            <p className="mt-2 text-xs text-slate-300">
+            <p className="mt-1 text-xs text-slate-500">
               مدیریت کارکنان و فیش‌های حقوقی
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-4 py-3 text-xs font-bold">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
               سامانه فعال است
             </div>
 
             <button
               onClick={() => loadDashboard(true)}
               disabled={refreshing}
-              className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-xs font-bold hover:bg-white/20 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
               <RefreshCw
-                size={15}
+                size={14}
                 className={
                   refreshing ? "animate-spin" : ""
                 }
@@ -171,253 +198,219 @@ export default function AdminPage() {
 
               بروزرسانی
             </button>
+
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ERROR */}
-
       {error && (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">
           {error}
         </div>
       )}
 
-      {/* TITLE */}
+      {/* MAIN STATS */}
+      <section>
 
-      <div className="mb-4">
-        <h2 className="text-lg font-black text-slate-900">
-          وضعیت سامانه
-        </h2>
+        <div className="mb-3">
+          <h2 className="text-sm font-black text-slate-900">
+            آمار اصلی
+          </h2>
 
-        <p className="mt-1 text-xs text-slate-500">
-          خلاصه اطلاعات سیستم حقوق و دستمزد
-        </p>
-      </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            خلاصه وضعیت فعلی سیستم
+          </p>
+        </div>
 
-      {/* CARDS */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => {
-          const Icon = card.icon;
+          {cards.map((card) => {
+            const Icon = card.icon;
 
-          const content = (
-            <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-              <div className="flex items-start justify-between">
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-500">
-                    {card.title}
+            const content = (
+              <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+
+                <div className="flex items-center justify-between gap-3">
+
+                  <div className="min-w-0">
+
+                    <div className="text-[11px] font-bold text-slate-500">
+                      {card.title}
+                    </div>
+
+                    <div className="mt-2 truncate text-lg font-black text-slate-950">
+                      {loading ? "..." : card.value}
+                    </div>
+
+                    <div className="mt-1 text-[10px] text-slate-400">
+                      {card.description}
+                    </div>
+
                   </div>
 
-                  <div className="mt-2 truncate text-2xl font-black text-slate-950">
-                    {loading ? "..." : card.value}
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.iconClass}`}
+                  >
+                    <Icon size={19} />
                   </div>
 
-                  <div className="mt-2 text-[10px] text-slate-400">
-                    {card.description}
-                  </div>
                 </div>
 
-                <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${card.box} ${card.iconColor}`}
-                >
-                  <Icon size={22} />
-                </div>
+                {card.link && (
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[10px] font-bold text-blue-700">
+                    مدیریت
+                    <ArrowLeft size={12} />
+                  </div>
+                )}
+
               </div>
+            );
 
-              {card.link && (
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[10px] font-black text-blue-700">
-                  مشاهده و مدیریت
-                  <ArrowLeft size={13} />
-                </div>
-              )}
-            </div>
-          );
+            return card.link ? (
+              <Link
+                key={card.title}
+                href={card.link}
+              >
+                {content}
+              </Link>
+            ) : (
+              <div key={card.title}>
+                {content}
+              </div>
+            );
+          })}
 
-          return card.link ? (
-            <Link key={card.title} href={card.link}>
-              {content}
-            </Link>
-          ) : (
-            <div key={card.title}>{content}</div>
-          );
-        })}
-      </div>
+        </div>
+      </section>
 
       {/* FINANCIAL */}
+      <section>
 
-      <div className="mb-4">
-        <h2 className="text-lg font-black text-slate-900">
-          خلاصه مالی
-        </h2>
+        <div className="mb-3">
+          <h2 className="text-sm font-black text-slate-900">
+            خلاصه مالی
+          </h2>
 
-        <p className="mt-1 text-xs text-slate-500">
-          مجموع مبالغ ثبت شده در فیش‌ها
-        </p>
-      </div>
-
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-              <TrendingUp size={20} />
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-blue-700">
-                حقوق پایه
-              </div>
-
-              <div className="mt-1 text-base font-black text-slate-900">
-                {loading
-                  ? "..."
-                  : money(data.totalBaseSalary)}
-              </div>
-            </div>
-          </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            مجموع مبالغ ثبت‌شده در فیش‌ها
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-              <Wallet size={20} />
-            </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
 
-            <div>
-              <div className="text-xs font-bold text-emerald-700">
-                مزایا
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70 text-blue-700">
+                <TrendingUp size={18} />
               </div>
 
-              <div className="mt-1 text-base font-black text-slate-900">
-                {loading
-                  ? "..."
-                  : money(data.totalBenefits)}
-              </div>
-            </div>
-          </div>
-        </div>
+              <div>
+                <div className="text-[11px] font-bold text-blue-700">
+                  حقوق پایه
+                </div>
 
-        <div className="rounded-2xl border border-red-100 bg-red-50 p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-100 text-red-700">
-              <Receipt size={20} />
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-red-700">
-                کسورات
+                <div className="mt-1 text-sm font-black text-slate-900">
+                  {loading
+                    ? "..."
+                    : money(data.totalBaseSalary)}
+                </div>
               </div>
 
-              <div className="mt-1 text-base font-black text-slate-900">
-                {loading
-                  ? "..."
-                  : money(data.totalDeductions)}
-              </div>
             </div>
           </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70 text-emerald-700">
+                <Wallet size={18} />
+              </div>
+
+              <div>
+                <div className="text-[11px] font-bold text-emerald-700">
+                  مزایا
+                </div>
+
+                <div className="mt-1 text-sm font-black text-slate-900">
+                  {loading
+                    ? "..."
+                    : money(data.totalBenefits)}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/70 text-red-700">
+                <Receipt size={18} />
+              </div>
+
+              <div>
+                <div className="text-[11px] font-bold text-red-700">
+                  کسورات
+                </div>
+
+                <div className="mt-1 text-sm font-black text-slate-900">
+                  {loading
+                    ? "..."
+                    : money(data.totalDeductions)}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </div>
-      </div>
+      </section>
 
       {/* QUICK ACCESS */}
+      <section>
 
-      <div className="mb-4">
-        <h2 className="text-lg font-black text-slate-900">
-          مدیریت سامانه
-        </h2>
+        <div className="mb-3">
+          <h2 className="text-sm font-black text-slate-900">
+            دسترسی سریع
+          </h2>
 
-        <p className="mt-1 text-xs text-slate-500">
-          دسترسی سریع به بخش‌های اصلی
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Link
-          href="/admin/employees"
-          className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
-        >
-          <Users className="text-blue-700" size={24} />
-
-          <h3 className="mt-4 text-sm font-black text-slate-900">
-            کارکنان
-          </h3>
-
-          <p className="mt-2 text-[11px] leading-5 text-slate-500">
-            ثبت و مدیریت کارکنان
+          <p className="mt-1 text-[11px] text-slate-500">
+            بخش‌های اصلی پنل مدیریت
           </p>
-        </Link>
-
-        <Link
-          href="/admin/payslips"
-          className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg"
-        >
-          <FileText className="text-emerald-700" size={24} />
-
-          <h3 className="mt-4 text-sm font-black text-slate-900">
-            فیش‌های حقوقی
-          </h3>
-
-          <p className="mt-2 text-[11px] leading-5 text-slate-500">
-            ثبت و مدیریت فیش‌ها
-          </p>
-        </Link>
-
-        <Link
-          href="/admin/corrections"
-          className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg"
-        >
-          <Wrench className="text-orange-700" size={24} />
-
-          <h3 className="mt-4 text-sm font-black text-slate-900">
-            اصلاح فیش‌ها
-          </h3>
-
-          <p className="mt-2 text-[11px] leading-5 text-slate-500">
-            بررسی و اصلاح فیش‌ها
-          </p>
-        </Link>
-
-        <Link
-          href="/admin/reports"
-          className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-1 hover:border-purple-200 hover:shadow-lg"
-        >
-          <BarChart3 className="text-purple-700" size={24} />
-
-          <h3 className="mt-4 text-sm font-black text-slate-900">
-            گزارش‌ها
-          </h3>
-
-          <p className="mt-2 text-[11px] leading-5 text-slate-500">
-            گزارش‌های سیستم
-          </p>
-        </Link>
-
-        <Link
-          href="/admin/settings"
-          className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
-        >
-          <Settings className="text-slate-700" size={24} />
-
-          <h3 className="mt-4 text-sm font-black text-slate-900">
-            تنظیمات
-          </h3>
-
-          <p className="mt-2 text-[11px] leading-5 text-slate-500">
-            تنظیمات سامانه
-          </p>
-        </Link>
-      </div>
-
-      {/* FOOTER */}
-
-      <div className="border-t border-slate-200 pt-6 text-center">
-        <div className="text-[10px] font-black text-slate-400">
-          سیستم حقوق و دستمزد چابکان
         </div>
 
-        <div className="mt-1 text-[9px] text-slate-400">
-          مدیریت امن اطلاعات کارکنان و فیش‌های حقوقی
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+
+          {quickLinks.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+              >
+                <Icon
+                  size={21}
+                  className={item.className}
+                />
+
+                <h3 className="mt-3 text-xs font-black text-slate-900">
+                  {item.title}
+                </h3>
+
+                <p className="mt-1.5 text-[10px] leading-5 text-slate-500">
+                  {item.description}
+                </p>
+              </Link>
+            );
+          })}
+
         </div>
-      </div>
+      </section>
+
     </div>
   );
 }
