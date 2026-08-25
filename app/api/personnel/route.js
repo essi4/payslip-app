@@ -4,18 +4,22 @@ export async function GET() {
   try {
     const result = await pool.query(`
       SELECT
-        id,
-        full_name,
-        national_id,
-        personnel_code,
-        department,
-        job_title,
-        bank_account,
-        job_group,
-        payslip_password,
-        created_at
-      FROM personnel
-      ORDER BY id DESC
+        p.id,
+        p.full_name,
+        p.national_id,
+        p.personnel_code,
+        p.department,
+        p.job_title,
+        p.bank_account,
+        p.job_group,
+        p.payslip_password,
+        p.company_id,
+        p.created_at,
+        c.name AS company_name
+      FROM personnel p
+      LEFT JOIN companies c
+        ON c.id = p.company_id
+      ORDER BY p.id DESC
     `);
 
     return Response.json({
@@ -40,6 +44,7 @@ export async function POST(request) {
     const body = await request.json();
 
     const {
+      company_id,
       full_name,
       national_id,
       personnel_code,
@@ -50,9 +55,69 @@ export async function POST(request) {
       payslip_password,
     } = body;
 
+    if (!company_id) {
+      return Response.json(
+        {
+          success: false,
+          error: "لطفاً شرکت را انتخاب کنید.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!full_name?.trim()) {
+      return Response.json(
+        {
+          success: false,
+          error: "نام و نام خانوادگی الزامی است.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!national_id?.trim()) {
+      return Response.json(
+        {
+          success: false,
+          error: "کد ملی الزامی است.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!personnel_code?.trim()) {
+      return Response.json(
+        {
+          success: false,
+          error: "کد پرسنلی الزامی است.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const companyCheck = await pool.query(
+      `
+      SELECT id, name
+      FROM companies
+      WHERE id = $1
+      `,
+      [Number(company_id)]
+    );
+
+    if (companyCheck.rowCount === 0) {
+      return Response.json(
+        {
+          success: false,
+          error: "شرکت انتخاب‌شده پیدا نشد.",
+        },
+        { status: 400 }
+      );
+    }
+
     const result = await pool.query(
       `
       INSERT INTO personnel (
+        company_id,
         full_name,
         national_id,
         personnel_code,
@@ -62,18 +127,19 @@ export async function POST(request) {
         job_group,
         payslip_password
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
       `,
       [
-        full_name || null,
-        national_id || null,
-        personnel_code || null,
-        department || null,
-        job_title || null,
-        bank_account || null,
-        job_group || null,
-        payslip_password || null,
+        Number(company_id),
+        full_name.trim(),
+        national_id.trim(),
+        personnel_code.trim(),
+        department?.trim() || null,
+        job_title?.trim() || null,
+        bank_account?.trim() || null,
+        job_group?.trim() || null,
+        payslip_password?.trim() || null,
       ]
     );
 
@@ -111,6 +177,7 @@ export async function PUT(request) {
     }
 
     const {
+      company_id,
       full_name,
       national_id,
       personnel_code,
@@ -121,30 +188,42 @@ export async function PUT(request) {
       payslip_password,
     } = body;
 
+    if (!company_id) {
+      return Response.json(
+        {
+          success: false,
+          error: "لطفاً شرکت را انتخاب کنید.",
+        },
+        { status: 400 }
+      );
+    }
+
     const result = await pool.query(
       `
       UPDATE personnel
       SET
-        full_name = $1,
-        national_id = $2,
-        personnel_code = $3,
-        department = $4,
-        job_title = $5,
-        bank_account = $6,
-        job_group = $7,
-        payslip_password = $8
-      WHERE id = $9
+        company_id = $1,
+        full_name = $2,
+        national_id = $3,
+        personnel_code = $4,
+        department = $5,
+        job_title = $6,
+        bank_account = $7,
+        job_group = $8,
+        payslip_password = $9
+      WHERE id = $10
       RETURNING *
       `,
       [
-        full_name || null,
-        national_id || null,
-        personnel_code || null,
-        department || null,
-        job_title || null,
-        bank_account || null,
-        job_group || null,
-        payslip_password || null,
+        Number(company_id),
+        full_name?.trim() || null,
+        national_id?.trim() || null,
+        personnel_code?.trim() || null,
+        department?.trim() || null,
+        job_title?.trim() || null,
+        bank_account?.trim() || null,
+        job_group?.trim() || null,
+        payslip_password?.trim() || null,
         id,
       ]
     );
@@ -213,8 +292,6 @@ export async function DELETE(request) {
 
     return Response.json({
       success: true,
-      message: "کارمند با موفقیت حذف شد.",
-      id: result.rows[0].id,
     });
   } catch (error) {
     console.error("Personnel DELETE error:", error);
