@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createAdminSession, COOKIE_NAME, SESSION_TTL_SECONDS } from "../../../lib/admin-auth";
 
 export async function POST(request) {
   try {
@@ -7,16 +8,10 @@ export async function POST(request) {
     const username = body.username;
     const password = body.password;
 
-    const adminUsername =
-      process.env.ADMIN_USERNAME || "admin";
+    const adminUsername = process.env.ADMIN_USERNAME || "admin";
+    const adminPassword = process.env.ADMIN_PASSWORD || "123456";
 
-    const adminPassword =
-      process.env.ADMIN_PASSWORD || "123456";
-
-    if (
-      username !== adminUsername ||
-      password !== adminPassword
-    ) {
+    if (username !== adminUsername || password !== adminPassword) {
       return NextResponse.json(
         {
           success: false,
@@ -26,17 +21,19 @@ export async function POST(request) {
       );
     }
 
+    const session = createAdminSession();
+
     const response = NextResponse.json({
       success: true,
       message: "ورود با موفقیت انجام شد.",
     });
 
-    response.cookies.set("admin_logged_in", "true", {
+    response.cookies.set(COOKIE_NAME, session, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 8,
+      maxAge: SESSION_TTL_SECONDS,
     });
 
     return response;
