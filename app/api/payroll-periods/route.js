@@ -21,13 +21,9 @@ export async function GET(request) {
       GROUP BY p.year, p.month
       ORDER BY p.year DESC, p.month DESC
     `);
-
     return NextResponse.json({ success: true, data: result.rows });
   } catch (error) {
     console.error("GET PAYROLL PERIODS ERROR:", error);
-    return NextResponse.json(
-      { success: false, error: "خطا در دریافت دوره‌های حقوق." },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "خطا در دریافت دوره‌های حقوق." }, { status: 500 });
   }
 }
