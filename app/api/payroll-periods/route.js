@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/db.js";
+import { requireAdmin } from "../../lib/admin-auth.js";
 
-export async function GET() {
+export async function GET(request) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
   try {
     const { rows } = await pool.query(`
       SELECT
@@ -21,6 +24,8 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
   try {
     const body = await request.json();
     const companyId = Number(body.company_id);
@@ -61,6 +66,8 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
   try {
     const body = await request.json();
     const id = Number(body.id);
