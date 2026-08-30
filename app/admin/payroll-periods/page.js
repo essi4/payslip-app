@@ -5,7 +5,10 @@ import { useEffect, useState } from "react";
 export default function PayrollPeriodsPage() {
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [form, setForm] = useState({ company_id: "1", year: "1405", month: "6" });
 
   async function loadPeriods() {
     try {
@@ -22,6 +25,36 @@ export default function PayrollPeriodsPage() {
     }
   }
 
+  async function createPeriod(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/payroll-periods", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id: Number(form.company_id),
+          year: Number(form.year),
+          month: Number(form.month),
+          status: "open",
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "خطا در ایجاد دوره");
+
+      setMessage("دوره حقوق با موفقیت ایجاد شد.");
+      await loadPeriods();
+      setForm((current) => ({ ...current, month: String(Math.min(Number(current.month) + 1, 12)) }));
+    } catch (err) {
+      setError(err.message || "خطا در ایجاد دوره");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   useEffect(() => {
     loadPeriods();
   }, []);
@@ -32,13 +65,35 @@ export default function PayrollPeriodsPage() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">دوره‌های حقوق</h1>
-            <p className="mt-1 text-sm text-gray-500">مدیریت دوره‌ها و مشاهده تعداد فیش‌های متصل</p>
+            <p className="mt-1 text-sm text-gray-500">ایجاد و مدیریت دوره‌های حقوق و مشاهده تعداد فیش‌های متصل</p>
           </div>
           <button onClick={loadPeriods} className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50">
             بروزرسانی
           </button>
         </div>
 
+        <form onSubmit={createPeriod} className="mb-6 rounded-xl border bg-gray-50 p-5 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold">ایجاد دوره جدید</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="text-sm">
+              <span className="mb-1 block">شناسه شرکت</span>
+              <input required type="number" min="1" value={form.company_id} onChange={(e) => setForm({ ...form, company_id: e.target.value })} className="w-full rounded-lg border bg-white px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block">سال</span>
+              <input required type="number" min="1300" max="1600" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} className="w-full rounded-lg border bg-white px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block">ماه</span>
+              <input required type="number" min="1" max="12" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} className="w-full rounded-lg border bg-white px-3 py-2" />
+            </label>
+          </div>
+          <button disabled={saving} className="mt-4 rounded-lg bg-black px-5 py-2 text-sm text-white disabled:opacity-50">
+            {saving ? "در حال ثبت..." : "ایجاد دوره"}
+          </button>
+        </form>
+
+        {message && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{message}</div>}
         {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
         <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
