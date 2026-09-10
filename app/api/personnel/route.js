@@ -64,13 +64,59 @@ export async function PUT(request) {
 export async function DELETE(request) {
   const authError = requireAdmin(request);
   if (authError) return authError;
+
+  let client;
   try {
-    const body = await request.json(); const id = Number(body.id);
-    if (!Number.isInteger(id) || id <= 0) return Response.json({ success: false, error: "شناسه کارمند نامعتبر است." }, { status: 400 });
-    const payslips = await pool.query("SELECT COUNT(*)::int AS count FROM payslips WHERE personnel_id=$1", [id]);
-    if (Number(payslips.rows[0]?.count || 0) > 0) return Response.json({ success: false, error: "کارمندی که سابقه فیش حقوقی دارد قابل حذف نیست." }, { status: 409 });
-    const result = await pool.query("DELETE FROM personnel WHERE id=$1 RETURNING id", [id]);
-    if (!result.rowCount) return Response.json({ success: false, error: "کارمند پیدا نشد." }, { status: 404 });
-    return Response.json({ success: true });
-  } catch (error) { console.error("Personnel DELETE error:", error); return Response.json({ success: false, error: "خطا در حذف کارمند" }, { status: 500 }); }
+    const body = await request.json();
+    const id = Number(body.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return Response.json({ success: false, error: "شناسه کارمند نامعتبر است." }, { status: 400 });
+    }
+
+    client = await pool.connect();
+    await client.query("BEGIN");
+
+    const employee = await client.query(
+      "SELECT id, full_name FROM personnel WHERE id=$1 FOR UPDATE",
+      [id]
+    );
+
+    if (!employee.rowCount) {
+      await client.query("ROLLBACK");
+      return Response.json({ success: false, error: "کارمند پیدا نشد." }, { status: 404 });
+    }
+
+    // حذف دائمی: ابتدا تمام فیش‌های وابسته حذف می‌شوند تا محدودیت FK مانع حذف کارمند نشود.
+    await client.query("DELETE FROM payslips WHERE personnel_id=$1", [id]);
+
+    const result = await client.query(
+      "DELETE FROM personnel WHERE id=$1 RETURNING id",
+      [id]
+    );
+
+    if (!result.rowCount) {
+      await client.query("ROLLBACK");
+      return Response.json({ success: false, error: "کارمند پیدا نشد." }, { status: 404 });
+    }
+
+    await client.query("COMMIT");
+
+    return Response.json({
+      success: true,
+      deletedEmployeeId: result.rows[0].id,
+      message: `کارمند ${employee.rows[0].full_name} و تمام فیش‌های وابسته با موفقیت حذف شد.`,
+    });
+  } catch (error) {
+    if (client) {
+      try { await client.query("ROLLBACK"); } catch {}
+    }
+    console.error("Personnel DELETE error:", error);
+    return Response.json({
+      success: false,
+      error: "حذف کامل کارمند انجام نشد. سوابق وابسته حفظ شدند.",
+    }, { status: 500 });
+  } finally {
+    client?.release();
+  }
 }
