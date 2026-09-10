@@ -5,7 +5,7 @@ if (!baseUrl) {
   process.exit(1);
 }
 
-const adminPaths = [
+const adminGetPaths = [
   "/api/companies",
   "/api/personnel",
   "/api/payslips",
@@ -15,31 +15,70 @@ const adminPaths = [
   "/api/reports",
   "/api/settings",
   "/api/fix-payslips",
-  "/api/personnel/import",
-  "/api/personnel/email",
 ];
 
+const adminPostPaths = [
+  {
+    path: "/api/personnel/import",
+    body: {},
+  },
+  {
+    path: "/api/personnel/email",
+    body: { id: "invalid", email: "invalid@example.com" },
+  },
+];
+
+const sessionHeaders = {
+  forged: { cookie: "admin_logged_in=true" },
+  invalid: { cookie: "admin_session=invalid-expired-token" },
+};
+
 const tests = [
-  ...adminPaths.map((path) => ({
+  ...adminGetPaths.map((path) => ({
     name: `NO ADMIN | GET ${path} => 401`,
     method: "GET",
     path,
     expected: [401],
   })),
-  ...adminPaths.map((path) => ({
+  ...adminGetPaths.map((path) => ({
     name: `FORGED SESSION | GET ${path} => 401`,
     method: "GET",
     path,
-    headers: { cookie: "admin_logged_in=true" },
+    headers: sessionHeaders.forged,
     expected: [401],
   })),
-  ...adminPaths.map((path) => ({
+  ...adminGetPaths.map((path) => ({
     name: `INVALID SESSION | GET ${path} => 401`,
     method: "GET",
     path,
-    headers: { cookie: "admin_session=invalid-expired-token" },
+    headers: sessionHeaders.invalid,
     expected: [401],
   })),
+  ...adminPostPaths.flatMap(({ path, body }) => [
+    {
+      name: `NO ADMIN | POST ${path} => 401`,
+      method: "POST",
+      path,
+      body,
+      expected: [401],
+    },
+    {
+      name: `FORGED SESSION | POST ${path} => 401`,
+      method: "POST",
+      path,
+      body,
+      headers: sessionHeaders.forged,
+      expected: [401],
+    },
+    {
+      name: `INVALID SESSION | POST ${path} => 401`,
+      method: "POST",
+      path,
+      body,
+      headers: sessionHeaders.invalid,
+      expected: [401],
+    },
+  ]),
   {
     name: "PASSWORD QUERY STRING | payslip GET must not authenticate",
     method: "GET",
@@ -59,9 +98,14 @@ for (const test of tests) {
   const url = `${baseUrl}${test.path}`;
   const started = Date.now();
   try {
+    const headers = {
+      ...(test.headers || {}),
+      ...(test.body ? { "content-type": "application/json" } : {}),
+    };
     const response = await fetch(url, {
       method: test.method,
-      headers: test.headers,
+      headers,
+      body: test.body ? JSON.stringify(test.body) : undefined,
       redirect: "manual",
     });
     const body = await response.text();
