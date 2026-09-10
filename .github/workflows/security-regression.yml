@@ -1,0 +1,19 @@
+name: Security Regression (Staging)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  security-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run unauthenticated security matrix against Render staging
+        env:
+          BASE_URL: https://payslip-security-staging.onrender.com
+        run: node scripts/security-regression.mjs
