@@ -45,18 +45,17 @@ export async function PUT(request) {
     if (!Number.isInteger(id) || id <= 0) return Response.json({ success: false, error: "شناسه کارمند نامعتبر است." }, { status: 400 });
     if (!Number.isInteger(companyId) || companyId <= 0) return Response.json({ success: false, error: "لطفاً شرکت را انتخاب کنید." }, { status: 400 });
     if (!(await companyExists(companyId))) return Response.json({ success: false, error: "شرکت انتخاب‌شده پیدا نشد." }, { status: 400 });
-
-    const existing = await pool.query("SELECT id, company_id FROM personnel WHERE id=$1", [id]);
+    const existing = await pool.query("SELECT id, company_id, payslip_password FROM personnel WHERE id=$1", [id]);
     if (!existing.rowCount) return Response.json({ success: false, error: "کارمند پیدا نشد." }, { status: 404 });
     const existingCompanyId = Number(existing.rows[0].company_id);
     if (existingCompanyId !== companyId) {
       const payslips = await pool.query("SELECT COUNT(*)::int AS count FROM payslips WHERE personnel_id=$1", [id]);
       if (Number(payslips.rows[0]?.count || 0) > 0) return Response.json({ success: false, error: "کارمندی که سابقه فیش حقوقی دارد قابل انتقال به شرکت دیگر نیست." }, { status: 409 });
     }
-
     const nationalId = cleanNationalId(body.national_id);
     if (nationalId.length !== 10) return Response.json({ success: false, error: "کد ملی باید ۱۰ رقم باشد." }, { status: 400 });
-    const password = String(body.payslip_password || "").trim(); const passwordHash = password ? await hashPassword(password) : null;
+    const suppliedPassword = String(body.payslip_password || "").trim();
+    const passwordHash = suppliedPassword ? await hashPassword(suppliedPassword) : existing.rows[0].payslip_password;
     const result = await pool.query(`UPDATE personnel SET company_id=$1, full_name=$2, national_id=$3, personnel_code=$4, department=$5, job_title=$6, bank_account=$7, job_group=$8, payslip_password=$9 WHERE id=$10 RETURNING id, full_name, national_id, personnel_code, department, job_title, bank_account, job_group, company_id, created_at`, [companyId, String(body.full_name || "").trim(), nationalId, String(body.personnel_code || "").trim(), body.department?.trim() || null, body.job_title?.trim() || null, body.bank_account?.trim() || null, body.job_group?.trim() || null, passwordHash, id]);
     return Response.json({ success: true, data: result.rows[0] });
   } catch (error) { console.error("Personnel PUT error:", error); return Response.json({ success: false, error: "خطا در ویرایش کارمند" }, { status: 500 }); }
