@@ -17,12 +17,14 @@ const adminGetPaths = [
   "/api/fix-payslips",
 ];
 
-const adminPostPaths = [
+const adminMutationPaths = [
   {
+    method: "POST",
     path: "/api/personnel/import",
     body: {},
   },
   {
+    method: "PUT",
     path: "/api/personnel/email",
     body: { id: "invalid", email: "invalid@example.com" },
   },
@@ -54,25 +56,25 @@ const tests = [
     headers: sessionHeaders.invalid,
     expected: [401],
   })),
-  ...adminPostPaths.flatMap(({ path, body }) => [
+  ...adminMutationPaths.flatMap(({ method, path, body }) => [
     {
-      name: `NO ADMIN | POST ${path} => 401`,
-      method: "POST",
+      name: `NO ADMIN | ${method} ${path} => 401`,
+      method,
       path,
       body,
       expected: [401],
     },
     {
-      name: `FORGED SESSION | POST ${path} => 401`,
-      method: "POST",
+      name: `FORGED SESSION | ${method} ${path} => 401`,
+      method,
       path,
       body,
       headers: sessionHeaders.forged,
       expected: [401],
     },
     {
-      name: `INVALID SESSION | POST ${path} => 401`,
-      method: "POST",
+      name: `INVALID SESSION | ${method} ${path} => 401`,
+      method,
       path,
       body,
       headers: sessionHeaders.invalid,
