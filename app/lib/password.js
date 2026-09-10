@@ -19,7 +19,9 @@ export async function verifyPassword(password, storedPassword) {
   if (!value || !stored) return { valid: false, needsUpgrade: false };
 
   if (!stored.startsWith("scrypt$")) {
-    return { valid: crypto.timingSafeEqual(Buffer.from(value), Buffer.from(stored)), needsUpgrade: true };
+    const a = Buffer.from(value);
+    const b = Buffer.from(stored);
+    return { valid: a.length === b.length && crypto.timingSafeEqual(a, b), needsUpgrade: true };
   }
 
   const [, salt, expectedHex] = stored.split("$");
