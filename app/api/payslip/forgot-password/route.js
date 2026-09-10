@@ -7,9 +7,13 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const nationalId = String(body?.national_id || "").replace(/[^0-9]/g, "");
-    if (nationalId.length !== 10) return NextResponse.json({ success: false, error: "کد ملی باید ۱۰ رقمی باشد." }, { status: 400 });
+    const personnelCode = String(body?.personnel_code || "").trim();
+    if (nationalId.length !== 10 || !personnelCode) return NextResponse.json({ success: false, error: "اطلاعات واردشده معتبر نیست." }, { status: 400 });
 
-    const result = await pool.query(`SELECT id, full_name, email FROM personnel WHERE national_id=$1 LIMIT 1`, [nationalId]);
+    const result = await pool.query(
+      `SELECT id, full_name, email FROM personnel WHERE national_id=$1 AND personnel_code=$2 LIMIT 1`,
+      [nationalId, personnelCode]
+    );
     if (!result.rows.length || !result.rows[0].email) {
       return NextResponse.json({ success: true, message: "اگر اطلاعات کارمند معتبر باشد، کد بازیابی به ایمیل ثبت‌شده ارسال می‌شود." });
     }
