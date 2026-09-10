@@ -5,35 +5,12 @@ import { requireAdmin } from "../../lib/admin-auth";
 export const dynamic = "force-dynamic";
 
 const PERSIAN_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
-
 function toNumber(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
-function normalizeMonth(value) {
-  const raw = String(value ?? "").trim();
-  const numeric = Number(raw);
-  if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 12) return numeric;
-  const index = PERSIAN_MONTHS.indexOf(raw);
-  return index >= 0 ? index + 1 : null;
-}
-function calculate(body) {
-  const base = toNumber(body.base_salary), overtime = toNumber(body.overtime), bonus = toNumber(body.bonus), housing = toNumber(body.housing_allowance), food = toNumber(body.food_allowance), marriage = toNumber(body.marriage_allowance), child = toNumber(body.child_allowance), otherBenefits = toNumber(body.other_benefits), insurance = toNumber(body.insurance), tax = toNumber(body.tax), otherDeductions = toNumber(body.other_deductions);
-  const totalBenefits = overtime + bonus + housing + food + marriage + child + otherBenefits;
-  const totalDeductions = insurance + tax + otherDeductions;
-  return { base, overtime, bonus, housing, food, marriage, child, otherBenefits, insurance, tax, otherDeductions, totalBenefits, totalDeductions, netSalary: base + totalBenefits - totalDeductions };
-}
-async function getEmployee(personnelId) {
-  const result = await pool.query(`SELECT id, full_name, personnel_code, national_id, department, job_title, bank_account, job_group, company_id FROM personnel WHERE id=$1`, [personnelId]);
-  return result.rows[0] || null;
-}
-async function getPeriod(companyId, year, month) {
-  const monthNumber = normalizeMonth(month);
-  if (!monthNumber) return null;
-  const result = await pool.query(`SELECT id, company_id, status FROM payroll_periods WHERE company_id=$1 AND year=$2 AND month=$3 LIMIT 1`, [companyId, Number(year), monthNumber]);
-  return result.rows[0] || null;
-}
-async function getPayslipWithPeriod(payslipId) {
-  const result = await pool.query(`SELECT p.id, p.personnel_id, p.payroll_period_id, e.company_id, pp.company_id AS period_company_id, pp.status AS period_status FROM payslips p JOIN personnel e ON e.id=p.personnel_id LEFT JOIN payroll_periods pp ON pp.id=p.payroll_period_id WHERE p.id=$1`, [payslipId]);
-  return result.rows[0] || null;
-}
+function normalizeMonth(value) { const raw = String(value ?? "").trim(); const numeric = Number(raw); if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 12) return numeric; const index = PERSIAN_MONTHS.indexOf(raw); return index >= 0 ? index + 1 : null; }
+function calculate(body) { const base = toNumber(body.base_salary), overtime = toNumber(body.overtime), bonus = toNumber(body.bonus), housing = toNumber(body.housing_allowance), food = toNumber(body.food_allowance), marriage = toNumber(body.marriage_allowance), child = toNumber(body.child_allowance), otherBenefits = toNumber(body.other_benefits), insurance = toNumber(body.insurance), tax = toNumber(body.tax), otherDeductions = toNumber(body.other_deductions); const totalBenefits = overtime + bonus + housing + food + marriage + child + otherBenefits; const totalDeductions = insurance + tax + otherDeductions; return { base, overtime, bonus, housing, food, marriage, child, otherBenefits, insurance, tax, otherDeductions, totalBenefits, totalDeductions, netSalary: base + totalBenefits - totalDeductions }; }
+async function getEmployee(personnelId) { const result = await pool.query(`SELECT id, full_name, personnel_code, national_id, department, job_title, bank_account, job_group, company_id FROM personnel WHERE id=$1`, [personnelId]); return result.rows[0] || null; }
+async function getPeriod(companyId, year, month) { const monthNumber = normalizeMonth(month); if (!monthNumber) return null; const result = await pool.query(`SELECT id, company_id, status FROM payroll_periods WHERE company_id=$1 AND year=$2 AND month=$3 LIMIT 1`, [companyId, Number(year), monthNumber]); return result.rows[0] || null; }
+async function getPayslipWithPeriod(payslipId) { const result = await pool.query(`SELECT p.id, p.personnel_id, p.payroll_period_id, e.company_id, pp.company_id AS period_company_id, pp.status AS period_status FROM payslips p JOIN personnel e ON e.id=p.personnel_id LEFT JOIN payroll_periods pp ON pp.id=p.payroll_period_id WHERE p.id=$1`, [payslipId]); return result.rows[0] || null; }
 function closedPeriodResponse() { return NextResponse.json({ success: false, error: "این فیش متعلق به دوره بسته است و ویرایش یا حذف آن مجاز نیست." }, { status: 409 }); }
 function invalidPeriodResponse() { return NextResponse.json({ success: false, error: "دوره حقوق این شرکت پیدا نشد یا متعلق به شرکت دیگری است." }, { status: 409 }); }
 function crossCompanyResponse() { return NextResponse.json({ success: false, error: "انتقال فیش بین شرکت‌ها مجاز نیست." }, { status: 403 }); }
@@ -41,8 +18,13 @@ function crossCompanyResponse() { return NextResponse.json({ success: false, err
 export async function GET(request) {
   const authError = requireAdmin(request); if (authError) return authError;
   try {
-    const result = await pool.query(`SELECT p.id, p.personnel_id, p.payroll_period_id, p.year, p.month, p.bank_account, p.job_group, p.job_title, p.base_salary, p.overtime, p.bonus, p.housing_allowance, p.food_allowance, p.marriage_allowance, p.child_allowance, p.other_benefits, p.insurance, p.tax, p.other_deductions, p.net_salary, p.created_at, e.full_name, e.personnel_code, e.national_id, e.department, e.job_title AS employee_job_title, e.company_id, c.name AS company_name, pp.status AS period_status FROM payslips p JOIN personnel e ON p.personnel_id=e.id LEFT JOIN companies c ON e.company_id=c.id LEFT JOIN payroll_periods pp ON p.payroll_period_id=pp.id ORDER BY p.id DESC`);
-    return NextResponse.json({ success: true, data: result.rows });
+    const searchParams = new URL(request.url).searchParams;
+    const companyId = Number(searchParams.get("company_id"));
+    if (!Number.isInteger(companyId) || companyId <= 0) return NextResponse.json({ success: false, error: "انتخاب شرکت برای مشاهده فیش‌ها الزامی است." }, { status: 400 });
+    const companyResult = await pool.query(`SELECT id, name FROM companies WHERE id=$1 LIMIT 1`, [companyId]);
+    if (!companyResult.rows.length) return NextResponse.json({ success: false, error: "شرکت انتخاب‌شده پیدا نشد." }, { status: 404 });
+    const result = await pool.query(`SELECT p.id, p.personnel_id, p.payroll_period_id, p.year, p.month, p.bank_account, p.job_group, p.job_title, p.base_salary, p.overtime, p.bonus, p.housing_allowance, p.food_allowance, p.marriage_allowance, p.child_allowance, p.other_benefits, p.insurance, p.tax, p.other_deductions, p.net_salary, p.created_at, e.full_name, e.personnel_code, e.national_id, e.department, e.job_title AS employee_job_title, e.company_id, c.name AS company_name, pp.status AS period_status FROM payslips p JOIN personnel e ON p.personnel_id=e.id LEFT JOIN companies c ON e.company_id=c.id LEFT JOIN payroll_periods pp ON p.payroll_period_id=pp.id WHERE e.company_id=$1 ORDER BY p.id DESC`, [companyId]);
+    return NextResponse.json({ success: true, company: companyResult.rows[0], data: result.rows });
   } catch (error) { console.error("GET payslips error:", error); return NextResponse.json({ success: false, error: "خطا در دریافت فیش‌ها" }, { status: 500 }); }
 }
 
