@@ -15,6 +15,25 @@ export async function GET(request) {
     const personnelId = searchParams.get("personnel_id") || "";
     const companyId = searchParams.get("company_id") || "";
 
+    if (!companyId || !Number(companyId)) {
+      return NextResponse.json(
+        { success: false, error: "انتخاب شرکت برای دریافت گزارش الزامی است." },
+        { status: 400 }
+      );
+    }
+
+    const companyCheck = await pool.query(
+      `SELECT id, name FROM companies WHERE id = $1`,
+      [Number(companyId)]
+    );
+
+    if (companyCheck.rows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "شرکت انتخاب‌شده پیدا نشد." },
+        { status: 404 }
+      );
+    }
+
     const conditions = [];
     const values = [];
     const addCondition = (sql, value) => {
@@ -24,10 +43,12 @@ export async function GET(request) {
 
     if (year) addCondition("p.year = ?", year);
     if (month) addCondition("p.month = ?", month);
-    if (personnelId && Number(personnelId)) addCondition("p.personnel_id = ?", Number(personnelId));
-    if (companyId && Number(companyId)) addCondition("e.company_id = ?", Number(companyId));
+    if (personnelId && Number(personnelId)) {
+      addCondition("p.personnel_id = ?", Number(personnelId));
+    }
+    addCondition("e.company_id = ?", Number(companyId));
 
-    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const where = `WHERE ${conditions.join(" AND ")}`;
 
     const summaryResult = await pool.query(`
       SELECT COUNT(*)::int AS payslips_count,
@@ -63,22 +84,58 @@ export async function GET(request) {
     `, values);
 
     const summary = summaryResult.rows[0] || {};
+    const company = companyCheck.rows[0];
+
     return NextResponse.json({
-      success:true,
-      filters:{year,month,personnel_id:personnelId,company_id:companyId},
-      data:{
-        employeesCount:Number(employeesResult.rows[0]?.employees_count||0),
-        payslipsCount:Number(summary.payslips_count||0),
-        totalBaseSalary:Number(summary.total_base_salary||0),
-        totalBenefits:Number(summary.total_benefits||0),
-        totalDeductions:Number(summary.total_deductions||0),
-        totalNetSalary:Number(summary.total_net_salary||0),
-        monthlyReports:monthlyResult.rows.map(item=>({year:item.year,month:item.month,payslipsCount:Number(item.payslips_count||0),baseSalary:Number(item.base_salary||0),benefits:Number(item.benefits||0),deductions:Number(item.deductions||0),netSalary:Number(item.net_salary||0)})),
-        payslips:payslipsResult.rows.map(item=>({id:item.id,personnel_id:item.personnel_id,year:item.year,month:item.month,base_salary:Number(item.base_salary||0),benefits:Number(item.benefits||0),deductions:Number(item.deductions||0),net_salary:Number(item.net_salary||0),created_at:item.created_at,full_name:item.full_name,personnel_code:item.personnel_code,company_id:item.company_id,company_name:item.company_name}))
-      }
+      success: true,
+      filters: {
+        year,
+        month,
+        personnel_id: personnelId,
+        company_id: companyId,
+      },
+      company: {
+        id: company.id,
+        name: company.name,
+      },
+      data: {
+        employeesCount: Number(employeesResult.rows[0]?.employees_count || 0),
+        payslipsCount: Number(summary.payslips_count || 0),
+        totalBaseSalary: Number(summary.total_base_salary || 0),
+        totalBenefits: Number(summary.total_benefits || 0),
+        totalDeductions: Number(summary.total_deductions || 0),
+        totalNetSalary: Number(summary.total_net_salary || 0),
+        monthlyReports: monthlyResult.rows.map((item) => ({
+          year: item.year,
+          month: item.month,
+          payslipsCount: Number(item.payslips_count || 0),
+          baseSalary: Number(item.base_salary || 0),
+          benefits: Number(item.benefits || 0),
+          deductions: Number(item.deductions || 0),
+          netSalary: Number(item.net_salary || 0),
+        })),
+        payslips: payslipsResult.rows.map((item) => ({
+          id: item.id,
+          personnel_id: item.personnel_id,
+          year: item.year,
+          month: item.month,
+          base_salary: Number(item.base_salary || 0),
+          benefits: Number(item.benefits || 0),
+          deductions: Number(item.deductions || 0),
+          net_salary: Number(item.net_salary || 0),
+          created_at: item.created_at,
+          full_name: item.full_name,
+          personnel_code: item.personnel_code,
+          company_id: item.company_id,
+          company_name: item.company_name,
+        })),
+      },
     });
-  } catch(error) {
-    console.error("GET reports error:",error);
-    return NextResponse.json({success:false,error:error.message||"خطا در دریافت گزارش‌ها"},{status:500});
+  } catch (error) {
+    console.error("GET reports error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "خطا در دریافت گزارش‌ها" },
+      { status: 500 }
+    );
   }
 }
