@@ -11,13 +11,31 @@ function closedPeriodResponse() {
   );
 }
 
+function invalidPeriodResponse() {
+  return NextResponse.json(
+    { success: false, error: "دوره حقوق این شرکت پیدا نشد یا متعلق به شرکت دیگری است." },
+    { status: 409 }
+  );
+}
+
 async function getPayslipPeriod(id) {
   const result = await pool.query(`
-    SELECT p.id, pp.status AS period_status
+    SELECT p.id, e.company_id, pp.company_id AS period_company_id, pp.status AS period_status
     FROM payslips p
-    LEFT JOIN payroll_periods pp ON pp.id = p.payroll_period_id
+    JOIN personnel e ON e.id=p.personnel_id
+    LEFT JOIN payroll_periods pp ON pp.id=p.payroll_period_id
     WHERE p.id=$1
   `, [id]);
+  return result.rows[0] || null;
+}
+
+async function getTargetPeriod(companyId, year, month) {
+  const result = await pool.query(`
+    SELECT id, company_id, status
+    FROM payroll_periods
+    WHERE company_id=$1 AND year=$2 AND month=$3
+    LIMIT 1
+  `, [companyId, Number(year), Number(month)]);
   return result.rows[0] || null;
 }
 
@@ -84,6 +102,16 @@ export async function PUT(request) {
     const existing = await getPayslipPeriod(id);
     if (!existing) return NextResponse.json({ success: false, error: "فیش موردنظر پیدا نشد." }, { status: 404 });
     if (existing.period_status === "closed") return closedPeriodResponse();
+    if (existing.period_company_id && Number(existing.period_company_id) !== Number(existing.company_id)) return NextResponse.json({ success: false, error: "ساختار شرکت فیش نامعتبر است." }, { status: 409 });
+
+    const year = String(body.year || "1405").trim();
+    const month = Number(body.month);
+    if (!/^\d{4}$/.test(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      return NextResponse.json({ success: false, error: "سال یا ماه دوره نامعتبر است." }, { status: 400 });
+    }
+    const targetPeriod = await getTargetPeriod(existing.company_id, year, month);
+    if (!targetPeriod) return invalidPeriodResponse();
+    if (targetPeriod.status === "closed") return closedPeriodResponse();
 
     const base = Number(body.base_salary) || 0;
     if (base <= 0) return NextResponse.json({ success: false, error: "حقوق پایه باید بیشتر از صفر باشد." }, { status: 400 });
@@ -102,11 +130,11 @@ export async function PUT(request) {
     const netSalary = base + totalBenefits - totalDeductions;
 
     const result = await pool.query(`
-      UPDATE payslips SET year=$1, month=$2, bank_account=$3, job_group=$4, job_title=$5,
-        base_salary=$6, overtime=$7, bonus=$8, housing_allowance=$9, food_allowance=$10,
-        marriage_allowance=$11, child_allowance=$12, other_benefits=$13, insurance=$14,
-        tax=$15, other_deductions=$16, net_salary=$17 WHERE id=$18 RETURNING *
-    `, [body.year || "1405", body.month || "فروردین", body.bank_account || "", body.job_group || "", body.job_title || "", base, overtime, bonus, housing, food, marriage, child, otherBenefits, insurance, tax, otherDeductions, netSalary, id]);
+      UPDATE payslips SET payroll_period_id=$1, year=$2, month=$3, bank_account=$4, job_group=$5, job_title=$6,
+        base_salary=$7, overtime=$8, bonus=$9, housing_allowance=$10, food_allowance=$11,
+        marriage_allowance=$12, child_allowance=$13, other_benefits=$14, insurance=$15,
+        tax=$16, other_deductions=$17, net_salary=$18 WHERE id=$19 RETURNING *
+    `, [targetPeriod.id, year, month, body.bank_account || "", body.job_group || "", body.job_title || "", base, overtime, bonus, housing, food, marriage, child, otherBenefits, insurance, tax, otherDeductions, netSalary, id]);
 
     return NextResponse.json({ success: true, message: "فیش حقوقی با موفقیت اصلاح شد.", data: result.rows[0], calculation: { totalBenefits, totalDeductions, netSalary } });
   } catch (error) {
@@ -127,6 +155,7 @@ export async function DELETE(request) {
     const existing = await getPayslipPeriod(id);
     if (!existing) return NextResponse.json({ success: false, error: "فیش موردنظر پیدا نشد." }, { status: 404 });
     if (existing.period_status === "closed") return closedPeriodResponse();
+    if (existing.period_company_id && Number(existing.period_company_id) !== Number(existing.company_id)) return NextResponse.json({ success: false, error: "ساختار شرکت فیش نامعتبر است." }, { status: 409 });
 
     const result = await pool.query("DELETE FROM payslips WHERE id=$1 RETURNING id", [id]);
     if (!result.rows.length) return NextResponse.json({ success: false, error: "فیش موردنظر پیدا نشد." }, { status: 404 });
