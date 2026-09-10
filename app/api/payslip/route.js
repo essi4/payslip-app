@@ -8,13 +8,13 @@ function cleanNationalId(value) {
   return String(value || "").replace(/[^0-9]/g, "");
 }
 
-export async function GET(request) {
+export async function POST(request) {
   try {
-    const url = new URL(request.url);
-    const nationalId = cleanNationalId(url.searchParams.get("national_id"));
-    const password = String(url.searchParams.get("password") || "");
-    const month = url.searchParams.get("month");
-    const year = url.searchParams.get("year");
+    const body = await request.json();
+    const nationalId = cleanNationalId(body?.national_id);
+    const password = String(body?.password || "");
+    const month = body?.month ? String(body.month).trim() : "";
+    const year = body?.year ? String(body.year).trim() : "";
 
     if (nationalId.length !== 10 || !password) {
       return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
@@ -68,4 +68,12 @@ export async function GET(request) {
     console.error("PAYSLIP API ERROR:", error.message);
     return NextResponse.json({ success: false, error: "خطا در ارتباط با سامانه. لطفاً دوباره تلاش کنید." }, { status: 500 });
   }
+}
+
+// Backward compatibility is intentionally disabled: credentials must never be accepted in a URL query string.
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: "روش درخواست نامعتبر است. ورود کارکنان باید با POST انجام شود." },
+    { status: 405, headers: { Allow: "POST" } }
+  );
 }
