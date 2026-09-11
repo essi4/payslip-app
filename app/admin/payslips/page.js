@@ -7,7 +7,7 @@ const MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "�
 
 const EMPTY_FORM = {
   personnel_id: "", year: "1405", month: "فروردین", bank_account: "", job_group: "", job_title: "",
-  base_salary: "", overtime: "", bonus: "", housing_allowance: "", food_allowance: "",
+  base_salary: "", overtime: "", bonus: "", seniority_allowance: "", mission_allowance: "", housing_allowance: "", food_allowance: "",
   marriage_allowance: "", child_allowance: "", other_benefits: "", insurance: "", tax: "", other_deductions: "",
 };
 
@@ -30,10 +30,10 @@ export default function PayslipsPage() {
   const companyEmployees = useMemo(() => employees.filter((e) => Number(e.company_id) === Number(companyId)), [employees, companyId]);
 
   const base = number(form.base_salary);
-  const overtime = number(form.overtime), bonus = number(form.bonus);
+  const overtime = number(form.overtime), bonus = number(form.bonus), seniority = number(form.seniority_allowance), mission = number(form.mission_allowance);
   const housing = number(form.housing_allowance), food = number(form.food_allowance), marriage = number(form.marriage_allowance), child = number(form.child_allowance), otherBenefits = number(form.other_benefits);
   const insurance = number(form.insurance), tax = number(form.tax), otherDeductions = number(form.other_deductions);
-  const totalBenefits = overtime + bonus + housing + food + marriage + child + otherBenefits;
+  const totalBenefits = overtime + bonus + seniority + mission + housing + food + marriage + child + otherBenefits;
   const totalDeductions = insurance + tax + otherDeductions;
   const netSalary = base + totalBenefits - totalDeductions;
 
@@ -46,9 +46,8 @@ export default function PayslipsPage() {
       const list = Array.isArray(result.data) ? result.data : [];
       setCompanies(list);
       setCompanyId((current) => current && list.some((c) => String(c.id) === String(current)) ? current : list.length ? String(list[0].id) : "");
-    } catch (err) {
-      console.error(err); setError(err.message || "خطا در دریافت شرکت‌ها");
-    } finally { setCompaniesLoading(false); }
+    } catch (err) { console.error(err); setError(err.message || "خطا در دریافت شرکت‌ها"); }
+    finally { setCompaniesLoading(false); }
   }
 
   async function loadData() {
@@ -64,21 +63,15 @@ export default function PayslipsPage() {
       if (!payRes.ok || !payData.success) throw new Error(payData.error || "خطا در دریافت فیش‌ها");
       setEmployees(Array.isArray(empData.data) ? empData.data : []);
       setPayslips(Array.isArray(payData.data) ? payData.data : []);
-    } catch (err) {
-      console.error(err); setEmployees([]); setPayslips([]); setError(err.message || "خطا در دریافت اطلاعات");
-    } finally { setLoading(false); }
+    } catch (err) { console.error(err); setEmployees([]); setPayslips([]); setError(err.message || "خطا در دریافت اطلاعات"); }
+    finally { setLoading(false); }
   }
 
   useEffect(() => { setIsMounted(true); loadCompanies(); }, []);
   useEffect(() => { if (!companiesLoading) loadData(); }, [companyId, companiesLoading]);
 
   function updateForm(field, value) { setForm((previous) => ({ ...previous, [field]: value })); }
-
-  function handleCompanyChange(value) {
-    if (editingId !== null) resetForm();
-    setCompanyId(value);
-  }
-
+  function handleCompanyChange(value) { if (editingId !== null) resetForm(); setCompanyId(value); }
   function handleEmployeeChange(value) {
     if (!value) { setForm((p) => ({ ...p, personnel_id: "", bank_account: "", job_group: "", job_title: "" })); return; }
     const employee = companyEmployees.find((item) => String(item.id) === String(value));
@@ -99,7 +92,7 @@ export default function PayslipsPage() {
       const response = await fetch("/api/payslips", {
         method: isEditing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...(isEditing ? { id: editingId } : {}), personnel_id: Number(form.personnel_id), year: form.year, month: form.month, bank_account: form.bank_account, job_group: form.job_group, job_title: form.job_title, base_salary: base, overtime, bonus, housing_allowance: housing, food_allowance: food, marriage_allowance: marriage, child_allowance: child, other_benefits: otherBenefits, insurance, tax, other_deductions: otherDeductions, net_salary: netSalary }),
+        body: JSON.stringify({ ...(isEditing ? { id: editingId } : {}), personnel_id: Number(form.personnel_id), year: form.year, month: form.month, bank_account: form.bank_account, job_group: form.job_group, job_title: form.job_title, base_salary: base, overtime, bonus, seniority_allowance: seniority, mission_allowance: mission, housing_allowance: housing, food_allowance: food, marriage_allowance: marriage, child_allowance: child, other_benefits: otherBenefits, insurance, tax, other_deductions: otherDeductions, net_salary: netSalary }),
       });
       const result = await response.json();
       if (!response.ok || !result.success) { alert(result.error || result.message || "عملیات انجام نشد"); return; }
@@ -115,7 +108,7 @@ export default function PayslipsPage() {
     setForm({
       personnel_id: String(payslip.personnel_id || ""), year: payslip.year || "1405", month: payslip.month || "فروردین",
       bank_account: payslip.bank_account || "", job_group: payslip.job_group || "", job_title: payslip.job_title || "",
-      base_salary: payslip.base_salary || "", overtime: payslip.overtime || "", bonus: payslip.bonus || "", housing_allowance: payslip.housing_allowance || "", food_allowance: payslip.food_allowance || "", marriage_allowance: payslip.marriage_allowance || "", child_allowance: payslip.child_allowance || "", other_benefits: payslip.other_benefits || "", insurance: payslip.insurance || "", tax: payslip.tax || "", other_deductions: payslip.other_deductions || "",
+      base_salary: payslip.base_salary || "", overtime: payslip.overtime || "", bonus: payslip.bonus || "", seniority_allowance: payslip.seniority_allowance || "", mission_allowance: payslip.mission_allowance || "", housing_allowance: payslip.housing_allowance || "", food_allowance: payslip.food_allowance || "", marriage_allowance: payslip.marriage_allowance || "", child_allowance: payslip.child_allowance || "", other_benefits: payslip.other_benefits || "", insurance: payslip.insurance || "", tax: payslip.tax || "", other_deductions: payslip.other_deductions || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -133,73 +126,42 @@ export default function PayslipsPage() {
   }
 
   function resetForm() { setForm({ ...EMPTY_FORM }); setEditingId(null); }
-
   if (!isMounted) return null;
-
   if (companiesLoading || loading) return <div className="payslips-page" dir="rtl"><div className="form-card" style={{ textAlign: "center", padding: "48px" }}><div style={{ fontSize: 48 }}>💰</div><h2>در حال آماده‌سازی مدیریت فیش‌ها...</h2><p>اطلاعات فقط برای شرکت انتخاب‌شده دریافت می‌شود.</p></div></div>;
-
   if (error && !selectedCompany) return <div className="payslips-page" dir="rtl"><div className="form-card" style={{ textAlign: "center", padding: "48px" }}><div style={{ fontSize: 48 }}>⚠️</div><h2>دریافت اطلاعات ناموفق بود</h2><p style={{ color: "#dc2626" }}>{error}</p><button type="button" className="submit-button" onClick={loadCompanies}>تلاش مجدد</button></div></div>;
 
   return (
     <div className="payslips-page" dir="rtl">
-      <div className="payslips-header">
-        <div className="page-title-row"><div className="title-icon">💰</div><div><h1>مدیریت فیش حقوقی</h1><p>ثبت، صدور و مشاهده فیش حقوق کارکنان شرکت انتخاب‌شده</p></div></div>
-        <div className="header-badge"><span>●</span> {selectedCompany ? selectedCompany.name : "شرکتی انتخاب نشده"}</div>
-      </div>
-
-      <div className="form-card" style={{ marginBottom: 24 }}>
-        <div className="section-header"><div><h2>🏢 شرکت فعال</h2><p>تمام عملیات فیش حقوقی در این صفحه فقط برای شرکت انتخاب‌شده انجام می‌شود.</p></div></div>
-        <div className="form-group" style={{ maxWidth: 620 }}>
-          <label>انتخاب شرکت</label>
-          <select value={companyId} onChange={(e) => handleCompanyChange(e.target.value)}>
-            <option value="">انتخاب شرکت...</option>
-            {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-          </select>
+      <div className="payslips-header"><div className="page-title-row"><div className="title-icon">💰</div><div><h1>مدیریت فیش حقوقی</h1><p>ثبت، صدور و مشاهده فیش حقوق کارکنان شرکت انتخاب‌شده</p></div></div><div className="header-badge"><span>●</span> {selectedCompany ? selectedCompany.name : "شرکتی انتخاب نشده"}</div></div>
+      <div className="form-card" style={{ marginBottom: 24 }}><div className="section-header"><div><h2>🏢 شرکت فعال</h2><p>تمام عملیات فیش حقوقی در این صفحه فقط برای شرکت انتخاب‌شده انجام می‌شود.</p></div></div><div className="form-group" style={{ maxWidth: 620 }}><label>انتخاب شرکت</label><select value={companyId} onChange={(e) => handleCompanyChange(e.target.value)}><option value="">انتخاب شرکت...</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></div>{selectedCompany && <div style={{ marginTop: 12, padding: "12px 16px", borderRadius: 10, background: "#eff6ff", color: "#1d4ed8", fontWeight: 600 }}>گزارش و فیش‌های قابل مشاهده: <strong>{selectedCompany.name}</strong></div>}</div>
+      <div className="stats-grid"><div className="stat-card"><div className="stat-icon blue">📄</div><div><span>کل فیش‌های این شرکت</span><strong>{payslips.length.toLocaleString("fa-IR")}</strong></div></div><div className="stat-card"><div className="stat-icon green">👥</div><div><span>کارکنان این شرکت</span><strong>{companyEmployees.length.toLocaleString("fa-IR")}</strong></div></div><div className="stat-card"><div className="stat-icon orange">💵</div><div><span>مجموع خالص پرداختی</span><strong>{payslips.reduce((sum, item) => sum + number(item.net_salary), 0).toLocaleString("fa-IR")}</strong><small>تومان</small></div></div><div className="stat-card"><div className="stat-icon purple">📅</div><div><span>دوره جاری</span><strong>{form.year}</strong><small>{form.month}</small></div></div></div>
+      <div className="form-card"><div className="section-header"><div><h2>{editingId !== null ? "ویرایش فیش حقوقی" : "صدور فیش جدید"}</h2><p>{editingId !== null ? `اصلاح فیش ${selectedCompany?.name || "شرکت"}` : `صدور فیش برای کارکنان ${selectedCompany?.name || "شرکت"}`}</p></div><div className="section-icon">{editingId !== null ? "✏️" : "➕"}</div></div>
+        <form onSubmit={handleSubmit}><div className="form-grid">
+          <div className="form-group employee-field"><label>انتخاب کارمند</label><select value={form.personnel_id} onChange={(e) => handleEmployeeChange(e.target.value)}><option value="">انتخاب کارمند...</option>{companyEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name || "بدون نام"} — {employee.personnel_code || "بدون کد"}</option>)}</select></div>
+          <div className="form-group"><label>سال</label><input type="text" inputMode="numeric" value={form.year} onChange={(e) => updateForm("year", e.target.value)} /></div>
+          <div className="form-group"><label>ماه</label><select value={form.month} onChange={(e) => updateForm("month", e.target.value)}>{MONTHS.map((month) => <option key={month} value={month}>{month}</option>)}</select></div>
+          <div className="form-group"><label>شماره حساب</label><input type="text" value={form.bank_account} onChange={(e) => updateForm("bank_account", e.target.value)} placeholder="شماره حساب" /></div>
+          <div className="form-group"><label>گروه شغلی</label><input type="text" value={form.job_group} onChange={(e) => updateForm("job_group", e.target.value)} placeholder="مثلاً گروه ۸" /></div>
+          <div className="form-group"><label>عنوان شغلی</label><input type="text" value={form.job_title} onChange={(e) => updateForm("job_title", e.target.value)} placeholder="عنوان شغلی" /></div>
+          <MoneyInput label="حقوق پایه" value={form.base_salary} onChange={(v) => updateForm("base_salary", v)} />
+          <MoneyInput label="اضافه کاری" value={form.overtime} onChange={(v) => updateForm("overtime", v)} />
+          <MoneyInput label="پاداش" value={form.bonus} onChange={(v) => updateForm("bonus", v)} />
+          <MoneyInput label="سنوات" value={form.seniority_allowance} onChange={(v) => updateForm("seniority_allowance", v)} />
+          <MoneyInput label="ماموریت" value={form.mission_allowance} onChange={(v) => updateForm("mission_allowance", v)} />
+          <MoneyInput label="حق مسکن" value={form.housing_allowance} onChange={(v) => updateForm("housing_allowance", v)} />
+          <MoneyInput label="بن خواربار" value={form.food_allowance} onChange={(v) => updateForm("food_allowance", v)} />
+          <MoneyInput label="حق تأهل" value={form.marriage_allowance} onChange={(v) => updateForm("marriage_allowance", v)} />
+          <MoneyInput label="حق اولاد" value={form.child_allowance} onChange={(v) => updateForm("child_allowance", v)} />
+          <MoneyInput label="سایر مزایا" value={form.other_benefits} onChange={(v) => updateForm("other_benefits", v)} />
+          <MoneyInput label="حق بیمه" value={form.insurance} onChange={(v) => updateForm("insurance", v)} deduction />
+          <MoneyInput label="مالیات" value={form.tax} onChange={(v) => updateForm("tax", v)} deduction />
+          <MoneyInput label="سایر کسورات" value={form.other_deductions} onChange={(v) => updateForm("other_deductions", v)} deduction />
         </div>
-        {selectedCompany && <div style={{ marginTop: 12, padding: "12px 16px", borderRadius: 10, background: "#eff6ff", color: "#1d4ed8", fontWeight: 600 }}>گزارش و فیش‌های قابل مشاهده: <strong>{selectedCompany.name}</strong></div>}
-      </div>
-
-      <div className="stats-grid">
-        <div className="stat-card"><div className="stat-icon blue">📄</div><div><span>کل فیش‌های این شرکت</span><strong>{payslips.length.toLocaleString("fa-IR")}</strong></div></div>
-        <div className="stat-card"><div className="stat-icon green">👥</div><div><span>کارکنان این شرکت</span><strong>{companyEmployees.length.toLocaleString("fa-IR")}</strong></div></div>
-        <div className="stat-card"><div className="stat-icon orange">💵</div><div><span>مجموع خالص پرداختی</span><strong>{payslips.reduce((sum, item) => sum + number(item.net_salary), 0).toLocaleString("fa-IR")}</strong><small>تومان</small></div></div>
-        <div className="stat-card"><div className="stat-icon purple">📅</div><div><span>دوره جاری</span><strong>{form.year}</strong><small>{form.month}</small></div></div>
-      </div>
-
-      <div className="form-card">
-        <div className="section-header"><div><h2>{editingId !== null ? "ویرایش فیش حقوقی" : "صدور فیش جدید"}</h2><p>{editingId !== null ? `اصلاح فیش ${selectedCompany?.name || "شرکت"}` : `صدور فیش برای کارکنان ${selectedCompany?.name || "شرکت"}`}</p></div><div className="section-icon">{editingId !== null ? "✏️" : "➕"}</div></div>
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="form-group employee-field"><label>انتخاب کارمند</label><select value={form.personnel_id} onChange={(e) => handleEmployeeChange(e.target.value)}><option value="">انتخاب کارمند...</option>{companyEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name || "بدون نام"} — {employee.personnel_code || "بدون کد"}</option>)}</select></div>
-            <div className="form-group"><label>سال</label><input type="text" inputMode="numeric" value={form.year} onChange={(e) => updateForm("year", e.target.value)} /></div>
-            <div className="form-group"><label>ماه</label><select value={form.month} onChange={(e) => updateForm("month", e.target.value)}>{MONTHS.map((month) => <option key={month} value={month}>{month}</option>)}</select></div>
-            <div className="form-group"><label>شماره حساب</label><input type="text" value={form.bank_account} onChange={(e) => updateForm("bank_account", e.target.value)} placeholder="شماره حساب" /></div>
-            <div className="form-group"><label>گروه شغلی</label><input type="text" value={form.job_group} onChange={(e) => updateForm("job_group", e.target.value)} placeholder="مثلاً گروه ۸" /></div>
-            <div className="form-group"><label>عنوان شغلی</label><input type="text" value={form.job_title} onChange={(e) => updateForm("job_title", e.target.value)} placeholder="عنوان شغلی" /></div>
-            <MoneyInput label="حقوق پایه" value={form.base_salary} onChange={(v) => updateForm("base_salary", v)} />
-            <MoneyInput label="اضافه کاری" value={form.overtime} onChange={(v) => updateForm("overtime", v)} />
-            <MoneyInput label="پاداش" value={form.bonus} onChange={(v) => updateForm("bonus", v)} />
-            <MoneyInput label="حق مسکن" value={form.housing_allowance} onChange={(v) => updateForm("housing_allowance", v)} />
-            <MoneyInput label="بن خواربار" value={form.food_allowance} onChange={(v) => updateForm("food_allowance", v)} />
-            <MoneyInput label="حق تأهل" value={form.marriage_allowance} onChange={(v) => updateForm("marriage_allowance", v)} />
-            <MoneyInput label="حق اولاد" value={form.child_allowance} onChange={(v) => updateForm("child_allowance", v)} />
-            <MoneyInput label="سایر مزایا" value={form.other_benefits} onChange={(v) => updateForm("other_benefits", v)} />
-            <MoneyInput label="حق بیمه" value={form.insurance} onChange={(v) => updateForm("insurance", v)} deduction />
-            <MoneyInput label="مالیات" value={form.tax} onChange={(v) => updateForm("tax", v)} deduction />
-            <MoneyInput label="سایر کسورات" value={form.other_deductions} onChange={(v) => updateForm("other_deductions", v)} deduction />
-          </div>
-
-          <div className="salary-summary"><div className="summary-item"><span>حقوق پایه</span><strong>{base.toLocaleString("fa-IR")} تومان</strong></div><div className="summary-item"><span>مجموع مزایا</span><strong className="positive">{totalBenefits.toLocaleString("fa-IR")} تومان</strong></div><div className="summary-item"><span>مجموع کسورات</span><strong className="negative">{totalDeductions.toLocaleString("fa-IR")} تومان</strong></div><div className="net-summary"><span>خالص پرداختی</span><strong>{netSalary.toLocaleString("fa-IR")}</strong><small>تومان</small></div></div>
-
-          <div className="form-actions"><button type="submit" disabled={saving || !companyId} className="submit-button">{saving ? "در حال ذخیره..." : editingId !== null ? "✓ ذخیره تغییرات" : "✓ ثبت و صدور فیش حقوقی"}</button>{editingId !== null && <button type="button" onClick={resetForm} className="back-button">لغو ویرایش</button>}</div>
+        <div className="salary-summary"><div className="summary-item"><span>حقوق پایه</span><strong>{base.toLocaleString("fa-IR")} تومان</strong></div><div className="summary-item"><span>مجموع مزایا</span><strong className="positive">{totalBenefits.toLocaleString("fa-IR")} تومان</strong></div><div className="summary-item"><span>مجموع کسورات</span><strong className="negative">{totalDeductions.toLocaleString("fa-IR")} تومان</strong></div><div className="net-summary"><span>خالص پرداختی</span><strong>{netSalary.toLocaleString("fa-IR")}</strong><small>تومان</small></div></div>
+        <div className="form-actions"><button type="submit" disabled={saving || !companyId} className="submit-button">{saving ? "در حال ذخیره..." : editingId !== null ? "✓ ذخیره تغییرات" : "✓ ثبت و صدور فیش حقوقی"}</button>{editingId !== null && <button type="button" onClick={resetForm} className="back-button">لغو ویرایش</button>}</div>
         </form>
       </div>
-
-      <div className="table-card">
-        <div className="section-header table-header"><div><h2>فیش‌های صادر شده</h2><p>لیست فیش‌های صادرشده فقط برای {selectedCompany?.name}</p></div><span className="count-badge">{payslips.length.toLocaleString("fa-IR")} فیش</span></div>
-        {error && <div style={{ margin: "0 20px 16px", padding: 12, borderRadius: 10, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}
-        <div className="table-wrapper"><table><thead><tr><th>#</th><th>کارمند</th><th>کد پرسنلی</th><th>شرکت</th><th>دوره</th><th>حقوق پایه</th><th>خالص پرداختی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{payslips.length === 0 ? <tr><td colSpan="9" className="empty-cell">برای این شرکت هنوز فیشی صادر نشده است.</td></tr> : payslips.map((payslip, index) => <tr key={payslip.id}><td>{index + 1}</td><td className="employee-name">{payslip.full_name || "نامشخص"}</td><td>{payslip.personnel_code || "---"}</td><td>{payslip.company_name || selectedCompany?.name || "---"}</td><td>{payslip.month} {payslip.year}</td><td>{number(payslip.base_salary).toLocaleString("fa-IR")} تومان</td><td className="net-value">{number(payslip.net_salary).toLocaleString("fa-IR")} تومان</td><td><span className="status-badge">صادر شده</span></td><td><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><a href={`/admin/payslips/${payslip.id}`} className="view-button">👁 مشاهده</a><button type="button" onClick={() => handleEdit(payslip)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#f59e0b", color: "#fff" }}>✏️ ویرایش</button><button type="button" onClick={() => handleDelete(payslip.id)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#ef4444", color: "#fff" }}>🗑 حذف</button></div></td></tr>)}</tbody></table></div>
-      </div>
+      <div className="table-card"><div className="section-header table-header"><div><h2>فیش‌های صادر شده</h2><p>لیست فیش‌های صادرشده فقط برای {selectedCompany?.name}</p></div><span className="count-badge">{payslips.length.toLocaleString("fa-IR")} فیش</span></div>{error && <div style={{ margin: "0 20px 16px", padding: 12, borderRadius: 10, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}<div className="table-wrapper"><table><thead><tr><th>#</th><th>کارمند</th><th>کد پرسنلی</th><th>شرکت</th><th>دوره</th><th>حقوق پایه</th><th>خالص پرداختی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{payslips.length === 0 ? <tr><td colSpan="9" className="empty-cell">برای این شرکت هنوز فیشی صادر نشده است.</td></tr> : payslips.map((payslip, index) => <tr key={payslip.id}><td>{index + 1}</td><td className="employee-name">{payslip.full_name || "نامشخص"}</td><td>{payslip.personnel_code || "---"}</td><td>{payslip.company_name || selectedCompany?.name || "---"}</td><td>{payslip.month} {payslip.year}</td><td>{number(payslip.base_salary).toLocaleString("fa-IR")} تومان</td><td className="net-value">{number(payslip.net_salary).toLocaleString("fa-IR")} تومان</td><td><span className="status-badge">صادر شده</span></td><td><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><a href={`/admin/payslips/${payslip.id}`} className="view-button">👁 مشاهده</a><button type="button" onClick={() => handleEdit(payslip)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#f59e0b", color: "#fff" }}>✏️ ویرایش</button><button type="button" onClick={() => handleDelete(payslip.id)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#ef4444", color: "#fff" }}>🗑 حذف</button></div></td></tr>)}</tbody></table></div></div>
     </div>
   );
 }
