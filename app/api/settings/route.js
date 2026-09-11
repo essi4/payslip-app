@@ -4,6 +4,8 @@ import { requireAdmin } from "../../lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
+const DEFAULT_SENIORITY_DAILY_RATE = 16667;
+
 async function createSettingsTable() {
   let tableExists = false;
 
@@ -32,13 +34,12 @@ async function createSettingsTable() {
             show_job_title BOOLEAN DEFAULT true,
             footer_text TEXT DEFAULT '',
             print_orientation VARCHAR(20) DEFAULT 'portrait',
+            seniority_daily_rate NUMERIC DEFAULT 16667,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           )
         `);
         tableExists = true;
       } catch (error) {
-        // A stale settings_id_seq can collide with PostgreSQL's CREATE SEQUENCE
-        // during a first request. Fall back to a fixed integer primary key.
         if (error?.code !== "23505") throw error;
 
         const retryCheck = await pool.query(`SELECT to_regclass('public.settings') AS table_name`);
@@ -64,6 +65,7 @@ async function createSettingsTable() {
               show_job_title BOOLEAN DEFAULT true,
               footer_text TEXT DEFAULT '',
               print_orientation VARCHAR(20) DEFAULT 'portrait',
+              seniority_daily_rate NUMERIC DEFAULT 16667,
               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `);
@@ -77,20 +79,20 @@ async function createSettingsTable() {
 
   if (!tableExists) throw new Error("جدول تنظیمات سامانه ایجاد نشد.");
 
+  await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS seniority_daily_rate NUMERIC DEFAULT ${DEFAULT_SENIORITY_DAILY_RATE}`);
+
   const check = await pool.query("SELECT id FROM settings ORDER BY id ASC LIMIT 1");
   if (!check.rows.length) {
     try {
-      // Explicit id=1 also works with the fallback table that has no SERIAL sequence.
       await pool.query(`
         INSERT INTO settings (
           id, company_name, system_title, fiscal_year, current_month, currency,
           phone, email, address, manager_name, manager_position,
           show_company_name, show_bank_account, show_job_group, show_job_title,
-          footer_text, print_orientation
-        ) VALUES (1, '', 'سیستم حقوق و دستمزد', '1405', 'فروردین', 'تومان', '', '', '', '', '', true, true, true, true, '', 'portrait')
-      `);
+          footer_text, print_orientation, seniority_daily_rate
+        ) VALUES (1, '', 'سیستم حقوق و دستمزد', '1405', 'فروردین', 'تومان', '', '', '', '', '', true, true, true, true, '', 'portrait', $1)
+      `, [DEFAULT_SENIORITY_DAILY_RATE]);
     } catch (error) {
-      // Another concurrent request may have inserted the first row; that is safe to ignore.
       if (error?.code !== "23505") throw error;
     }
   }
@@ -118,6 +120,8 @@ export async function POST(request) {
     await createSettingsTable();
     const body = await request.json();
     const orientation = ["portrait", "landscape"].includes(body.print_orientation) ? body.print_orientation : "portrait";
+    const seniorityDailyRate = Number(body.seniority_daily_rate);
+    const safeSeniorityDailyRate = Number.isFinite(seniorityDailyRate) && seniorityDailyRate >= 0 ? seniorityDailyRate : DEFAULT_SENIORITY_DAILY_RATE;
 
     const result = await pool.query(`
       UPDATE settings SET
@@ -125,7 +129,7 @@ export async function POST(request) {
         currency=$5, phone=$6, email=$7, address=$8, manager_name=$9,
         manager_position=$10, show_company_name=$11, show_bank_account=$12,
         show_job_group=$13, show_job_title=$14, footer_text=$15,
-        print_orientation=$16, updated_at=CURRENT_TIMESTAMP
+        print_orientation=$16, seniority_daily_rate=$17, updated_at=CURRENT_TIMESTAMP
       WHERE id=(SELECT id FROM settings ORDER BY id ASC LIMIT 1)
       RETURNING *
     `, [
@@ -135,7 +139,7 @@ export async function POST(request) {
       body.address ?? "", body.manager_name ?? "", body.manager_position ?? "",
       body.show_company_name !== false, body.show_bank_account !== false,
       body.show_job_group !== false, body.show_job_title !== false,
-      body.footer_text ?? "", orientation,
+      body.footer_text ?? "", orientation, safeSeniorityDailyRate,
     ]);
 
     return NextResponse.json({ success: true, message: "تنظیمات با موفقیت ذخیره شد.", data: result.rows[0] || null });
