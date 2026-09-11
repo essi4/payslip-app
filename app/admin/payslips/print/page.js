@@ -2,110 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-function money(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n.toLocaleString("fa-IR") : "0";
-}
+function money(value) { const n=Number(value); return Number.isFinite(n)?n.toLocaleString("fa-IR"):"0"; }
 
-export default function PayslipPrintPage() {
-  const [ids, setIds] = useState("");
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const idList = useMemo(() => [...new Set(ids.split(",").map((x) => Number(x.trim())).filter((x) => Number.isInteger(x) && x > 0))], [ids]);
-
-  async function load() {
-    setError("");
-    if (!idList.length) return setError("حداقل یک شناسه فیش وارد کنید.");
-    setLoading(true);
-    try {
-      const loaded = [];
-      for (const id of idList) {
-        const r = await fetch(`/api/payslips/${id}`, { cache: "no-store" });
-        const d = await r.json();
-        if (r.ok && d.success && d.data) loaded.push(d.data);
-      }
-      if (!loaded.length) throw new Error("فیش قابل نمایش پیدا نشد.");
-      setItems(loaded);
-    } catch (e) {
-      setItems([]);
-      setError(e.message || "خطا در دریافت فیش‌ها");
-    } finally {
-      setLoading(false);
-    }
+export default function PayslipPrintPage(){
+  const [ids,setIds]=useState("");const [items,setItems]=useState([]);const [loading,setLoading]=useState(false);const [error,setError]=useState("");
+  const idList=useMemo(()=>[...new Set(ids.split(",").map(x=>Number(x.trim())).filter(x=>Number.isInteger(x)&&x>0))],[ids]);
+  async function load(rawIds=ids){
+    setError("");const list=[...new Set(String(rawIds).split(",").map(x=>Number(x.trim())).filter(x=>Number.isInteger(x)&&x>0))];
+    if(!list.length)return setError("حداقل یک شناسه فیش وارد کنید.");setLoading(true);
+    try{const loaded=[];for(const id of list){const r=await fetch(`/api/payslips/${id}`,{cache:"no-store"});const d=await r.json();if(r.ok&&d.success&&d.data)loaded.push(d.data)}if(!loaded.length)throw Error("فیش قابل نمایش پیدا نشد.");setIds(list.join(","));setItems(loaded)}catch(e){setItems([]);setError(e.message||"خطا در دریافت فیش‌ها")}finally{setLoading(false)}
   }
-
-  return (
-    <main dir="rtl" className="min-h-screen bg-slate-100 p-3 text-slate-900 md:p-8">
-      <div className="no-print mx-auto mb-5 max-w-5xl rounded-3xl bg-slate-950 p-5 text-white shadow-xl">
-        <div className="text-xs font-bold text-blue-300">PAYROLL PRO · PRINT CENTER</div>
-        <h1 className="mt-1 text-2xl font-black">پیش‌نمایش و چاپ گروهی فیش</h1>
-        <p className="mt-2 text-xs text-slate-300">شناسه فیش‌ها را با ویرگول جدا کن؛ سپس همه را یکجا برای چاپ یا ذخیره PDF آماده کن.</p>
-        <div className="mt-4 flex flex-col gap-3 md:flex-row">
-          <input value={ids} onChange={(e) => setIds(e.target.value)} placeholder="مثلاً 101,102,103" inputMode="numeric" className="flex-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-500" />
-          <button onClick={load} disabled={loading} className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black text-white disabled:opacity-50">{loading ? "در حال دریافت..." : "نمایش فیش‌ها"}</button>
-          <button onClick={() => window.print()} disabled={!items.length} className="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-black text-white disabled:opacity-40">🖨️ چاپ / PDF</button>
-        </div>
-        {error && <div className="mt-3 rounded-2xl bg-red-500/15 px-4 py-3 text-xs font-black text-red-300">🔴 {error}</div>}
-      </div>
-
-      <section className="mx-auto max-w-5xl space-y-5">
-        {items.map((p) => {
-          const employee = p.personnel || p.employee || {};
-          const company = p.company || {};
-          return (
-            <article key={p.id} className="payslip-sheet rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-8">
-              <header className="border-b-2 border-slate-900 pb-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div><div className="text-xs font-bold text-slate-500">فیش حقوق و دستمزد</div><h2 className="mt-1 text-xl font-black">{company.name || "شرکت"}</h2></div>
-                  <div className="text-left text-xs font-bold text-slate-500">شماره فیش: <strong className="text-slate-900">{p.id}</strong><br/>دوره: <strong className="text-slate-900">{p.month} {p.year}</strong></div>
-                </div>
-              </header>
-
-              <div className="grid grid-cols-2 gap-3 border-b border-slate-200 py-4 text-xs md:grid-cols-4">
-                <div><span className="text-slate-500">نام</span><strong className="mt-1 block">{employee.full_name || p.full_name || "—"}</strong></div>
-                <div><span className="text-slate-500">کد پرسنلی</span><strong className="mt-1 block">{employee.personnel_code || p.personnel_code || "—"}</strong></div>
-                <div><span className="text-slate-500">کد ملی</span><strong className="mt-1 block">{employee.national_id || p.national_id || "—"}</strong></div>
-                <div><span className="text-slate-500">عنوان شغلی</span><strong className="mt-1 block">{p.job_title || employee.job_title || "—"}</strong></div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 py-5 text-xs md:grid-cols-3">
-                <div className="rounded-2xl bg-slate-50 p-3">حقوق پایه<strong className="mt-1 block text-sm">{money(p.base_salary)}</strong></div>
-                <div className="rounded-2xl bg-blue-50 p-3">مأموریت<strong className="mt-1 block text-sm">{money(p.mission_allowance)}</strong></div>
-                <div className="rounded-2xl bg-amber-50 p-3">پایه سنوات<strong className="mt-1 block text-sm">{money(p.seniority_allowance)}</strong></div>
-                <div className="rounded-2xl bg-slate-50 p-3">اضافه‌کاری<strong className="mt-1 block text-sm">{money(p.overtime)}</strong></div>
-                <div className="rounded-2xl bg-slate-50 p-3">پاداش<strong className="mt-1 block text-sm">{money(p.bonus)}</strong></div>
-                <div className="rounded-2xl bg-slate-50 p-3">سایر مزایا<strong className="mt-1 block text-sm">{money(p.other_benefits)}</strong></div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-4 text-xs md:grid-cols-4">
-                <div>روز کارکرد<strong className="block mt-1">{p.work_days || 0}</strong></div>
-                <div>روز مأموریت<strong className="block mt-1">{p.mission_days || 0}</strong></div>
-                <div>ساعت مأموریت<strong className="block mt-1">{p.mission_hours || 0}</strong></div>
-                <div>سنوات مشمول<strong className="block mt-1">{p.seniority_eligible ? "بله" : "خیر"}</strong></div>
-              </div>
-
-              <div className="mt-5 flex items-center justify-between rounded-2xl bg-slate-950 p-4 text-white">
-                <span className="text-sm font-bold">خالص پرداختی</span>
-                <strong className="text-xl">{money(p.net_salary)}</strong>
-              </div>
-              <footer className="mt-4 text-[9px] text-slate-400">این نسخه برای چاپ/ذخیره PDF آماده شده است.</footer>
-            </article>
-          );
-        })}
-        {!items.length && <div className="no-print rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm font-bold text-slate-500">هنوز فیشی برای پیش‌نمایش انتخاب نشده است.</div>}
-      </section>
-
-      <style jsx global>{`
-        @media print {
-          @page { size: A4; margin: 10mm; }
-          body { background: #fff !important; }
-          .no-print { display: none !important; }
-          .payslip-sheet { box-shadow: none !important; border: 1px solid #d1d5db !important; border-radius: 0 !important; break-after: page; page-break-after: always; }
-          .payslip-sheet:last-child { break-after: auto; page-break-after: auto; }
-        }
-      `}</style>
-    </main>
-  );
+  useEffect(()=>{const q=new URLSearchParams(window.location.search).get("ids");if(q){setIds(q);load(q)}},[]);
+  return <main dir="rtl" className="min-h-screen bg-slate-100 p-3 text-slate-900 md:p-8">
+    <div className="no-print mx-auto mb-5 max-w-5xl rounded-3xl bg-slate-950 p-5 text-white shadow-xl"><div className="text-xs font-bold text-blue-300">PAYROLL PRO · PRINT CENTER</div><h1 className="mt-1 text-2xl font-black">پیش‌نمایش و چاپ گروهی فیش</h1><p className="mt-2 text-xs text-slate-300">فیش‌های صادرشده را یکجا ببین و برای چاپ یا ذخیره PDF آماده کن.</p><div className="mt-4 flex flex-col gap-3 md:flex-row"><input value={ids} onChange={e=>setIds(e.target.value)} placeholder="مثلاً 101,102,103" inputMode="numeric" className="flex-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-500"/><button onClick={()=>load()} disabled={loading} className="rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black text-white disabled:opacity-50">{loading?"در حال دریافت...":"نمایش فیش‌ها"}</button><button onClick={()=>window.print()} disabled={!items.length} className="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-black text-white disabled:opacity-40">🖨️ چاپ / PDF</button></div>{error&&<div className="mt-3 rounded-2xl bg-red-500/15 px-4 py-3 text-xs font-black text-red-300">🔴 {error}</div>}</div>
+    <section className="mx-auto max-w-5xl space-y-5">{items.map(p=>{const employee=p.personnel||p.employee||{};const company=p.company||{};return <article key={p.id} className="payslip-sheet rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-8"><header className="border-b-2 border-slate-900 pb-4"><div className="flex items-start justify-between gap-4"><div><div className="text-xs font-bold text-slate-500">فیش حقوق و دستمزد</div><h2 className="mt-1 text-xl font-black">{company.name||"شرکت"}</h2></div><div className="text-left text-xs font-bold text-slate-500">شماره فیش: <strong className="text-slate-900">{p.id}</strong><br/>دوره: <strong className="text-slate-900">{p.month} {p.year}</strong></div></div></header><div className="grid grid-cols-2 gap-3 border-b border-slate-200 py-4 text-xs md:grid-cols-4"><div><span className="text-slate-500">نام</span><strong className="mt-1 block">{employee.full_name||p.full_name||"—"}</strong></div><div><span className="text-slate-500">کد پرسنلی</span><strong className="mt-1 block">{employee.personnel_code||p.personnel_code||"—"}</strong></div><div><span className="text-slate-500">کد ملی</span><strong className="mt-1 block">{employee.national_id||p.national_id||"—"}</strong></div><div><span className="text-slate-500">عنوان شغلی</span><strong className="mt-1 block">{p.job_title||employee.job_title||"—"}</strong></div></div><div className="grid grid-cols-2 gap-3 py-5 text-xs md:grid-cols-3">{[["حقوق پایه",p.base_salary],["مأموریت",p.mission_allowance],["پایه سنوات",p.seniority_allowance],["اضافه‌کاری",p.overtime],["پاداش",p.bonus],["سایر مزایا",p.other_benefits]].map(([a,v])=><div key={a} className="rounded-2xl bg-slate-50 p-3">{a}<strong className="mt-1 block text-sm">{money(v)}</strong></div>)}</div><div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-4 text-xs md:grid-cols-4"><div>روز کارکرد<strong className="mt-1 block">{p.work_days||0}</strong></div><div>روز مأموریت<strong className="mt-1 block">{p.mission_days||0}</strong></div><div>ساعت مأموریت<strong className="mt-1 block">{p.mission_hours||0}</strong></div><div>سنوات مشمول<strong className="mt-1 block">{p.seniority_eligible?"بله":"خیر"}</strong></div></div><div className="mt-5 flex items-center justify-between rounded-2xl bg-slate-950 p-4 text-white"><span className="text-sm font-bold">خالص پرداختی</span><strong className="text-xl">{money(p.net_salary)}</strong></div><footer className="mt-4 text-[9px] text-slate-400">این نسخه برای چاپ و ذخیره PDF آماده شده است.</footer></article>})}{!items.length&&<div className="no-print rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm font-bold text-slate-500">هنوز فیشی برای پیش‌نمایش انتخاب نشده است.</div>}</section>
+    <style jsx global>{`@media print{@page{size:A4;margin:10mm}body{background:#fff!important}.no-print{display:none!important}.payslip-sheet{box-shadow:none!important;border:1px solid #d1d5db!important;border-radius:0!important;break-after:page;page-break-after:always}.payslip-sheet:last-child{break-after:auto;page-break-after:auto}}`}</style>
+  </main>;
 }
