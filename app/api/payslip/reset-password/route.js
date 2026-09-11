@@ -15,6 +15,13 @@ export async function POST(request) {
     if (!/^\d{6}$/.test(code)) return NextResponse.json({ success: false, error: "کد بازیابی باید ۶ رقمی باشد." }, { status: 400 });
     if (newPassword.length < 6) return NextResponse.json({ success: false, error: "رمز عبور جدید باید حداقل ۶ کاراکتر باشد." }, { status: 400 });
 
+    // Keep recovery compatible with existing production databases.
+    await pool.query(`
+      ALTER TABLE personnel
+      ADD COLUMN IF NOT EXISTS password_reset_code VARCHAR(6),
+      ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMP
+    `);
+
     const passwordHash = await hashPassword(newPassword);
     const result = await pool.query(
       `UPDATE personnel SET payslip_password=$1, password_reset_code=NULL, password_reset_expires_at=NULL
