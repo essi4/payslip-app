@@ -13,11 +13,13 @@ async function addColumns() {
       ADD COLUMN IF NOT EXISTS marriage_allowance NUMERIC DEFAULT 0,
       ADD COLUMN IF NOT EXISTS child_allowance NUMERIC DEFAULT 0,
       ADD COLUMN IF NOT EXISTS other_benefits NUMERIC DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS seniority_allowance NUMERIC DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS mission_allowance NUMERIC DEFAULT 0,
 
       ADD COLUMN IF NOT EXISTS other_deductions NUMERIC DEFAULT 0;
     `);
 
-    console.log("ستون‌های جدید با موفقیت اضافه شدند.");
+    console.log("ستون‌های فیش حقوقی با موفقیت اضافه شدند.");
   } catch (error) {
     console.error("خطا:", error);
   } finally {
