@@ -14,6 +14,7 @@ export default function AdminLayout({ children }) {
     { title: "فیش‌های حقوقی", href: "/admin/payslips", icon: "📄" },
     { title: "صدور گروهی فیش", href: "/admin/payslips/bulk", icon: "⚡" },
     { title: "چاپ گروهی فیش", href: "/admin/payslips/print", icon: "🖨️" },
+    { title: "کنترل نهایی چاپ", href: "/admin/payslips/final-print", icon: "🛡️" },
     { title: "اصلاحات", href: "/admin/corrections", icon: "✏️" },
     { title: "گزارش‌ها", href: "/admin/reports", icon: "📊" },
     { title: "تنظیمات", href: "/admin/settings", icon: "⚙️" },
