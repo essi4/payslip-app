@@ -1,6 +1,11 @@
+import crypto from "crypto";
 import pool from "../../../lib/db";
 import { NextResponse } from "next/server";
 import { hashPassword } from "../../../lib/password";
+
+function hashRecoveryCode(code) {
+  return crypto.createHash("sha256").update(String(code)).digest("hex");
+}
 
 export async function POST(request) {
   try {
@@ -19,16 +24,17 @@ export async function POST(request) {
 
     await pool.query(`
       ALTER TABLE personnel
-      ADD COLUMN IF NOT EXISTS password_reset_code VARCHAR(6),
+      ADD COLUMN IF NOT EXISTS password_reset_code VARCHAR(64),
       ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMP
     `);
 
+    const codeHash = hashRecoveryCode(code);
     const passwordHash = await hashPassword(newPassword);
     const result = await pool.query(
       `UPDATE personnel SET payslip_password=$1, password_reset_code=NULL, password_reset_expires_at=NULL
        WHERE national_id=$2 AND personnel_code=$3 AND password_reset_code=$4 AND password_reset_expires_at > CURRENT_TIMESTAMP
        RETURNING id`,
-      [passwordHash, nationalId, personnelCode, code]
+      [passwordHash, nationalId, personnelCode, codeHash]
     );
     if (!result.rowCount) return NextResponse.json({ success: false, error: "کد بازیابی صحیح یا معتبر نیست." }, { status: 400 });
     return NextResponse.json({ success: true, message: "رمز عبور با موفقیت تغییر کرد." });
