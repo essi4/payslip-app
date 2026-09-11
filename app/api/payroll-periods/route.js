@@ -6,16 +6,28 @@ export async function GET(request) {
   const authError = requireAdmin(request);
   if (authError) return authError;
   try {
-    const { rows } = await pool.query(`
+    const { searchParams } = new URL(request.url);
+    const rawCompanyId = searchParams.get("company_id");
+    const companyId = rawCompanyId ? Number(rawCompanyId) : null;
+
+    if (rawCompanyId && (!Number.isInteger(companyId) || companyId <= 0)) {
+      return NextResponse.json({ success: false, error: "شناسه شرکت نامعتبر است" }, { status: 400 });
+    }
+
+    const { rows } = await pool.query(
+      `
       SELECT
         pp.id, pp.company_id, pp.year, pp.month, pp.status,
         pp.start_date, pp.end_date, pp.created_at, pp.updated_at,
         COUNT(p.id)::int AS payslip_count
       FROM payroll_periods pp
       LEFT JOIN payslips p ON p.payroll_period_id = pp.id
+      WHERE ($1::int IS NULL OR pp.company_id = $1)
       GROUP BY pp.id
       ORDER BY pp.year DESC, pp.month DESC, pp.id DESC
-    `);
+      `,
+      [companyId]
+    );
     return NextResponse.json({ success: true, data: rows });
   } catch (error) {
     console.error("GET /api/payroll-periods:", error);
@@ -38,11 +50,23 @@ export async function POST(request) {
     if (!Number.isInteger(companyId) || !Number.isInteger(year) || !Number.isInteger(month)) {
       return NextResponse.json({ success: false, error: "company_id، year و month الزامی هستند" }, { status: 400 });
     }
+    if (companyId <= 0 || year < 1300 || year > 1600) {
+      return NextResponse.json({ success: false, error: "اطلاعات شرکت یا سال نامعتبر است" }, { status: 400 });
+    }
     if (month < 1 || month > 12) {
       return NextResponse.json({ success: false, error: "ماه باید بین ۱ تا ۱۲ باشد" }, { status: 400 });
     }
     if (!["open", "closed"].includes(status)) {
       return NextResponse.json({ success: false, error: "وضعیت دوره نامعتبر است" }, { status: 400 });
+    }
+
+    const company = await pool.query(`SELECT id FROM companies WHERE id=$1 LIMIT 1`, [companyId]);
+    if (!company.rowCount) {
+      return NextResponse.json({ success: false, error: "شرکت موردنظر پیدا نشد" }, { status: 404 });
+    }
+
+    if (startDate && endDate && String(startDate) > String(endDate)) {
+      return NextResponse.json({ success: false, error: "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد" }, { status: 400 });
     }
 
     const duplicate = await pool.query(
@@ -71,22 +95,26 @@ export async function PATCH(request) {
   try {
     const body = await request.json();
     const id = Number(body.id);
+    const companyId = Number(body.company_id);
     const status = body.status;
 
-    if (!Number.isInteger(id)) {
-      return NextResponse.json({ success: false, error: "شناسه دوره مشخص نشده است" }, { status: 400 });
+    if (!Number.isInteger(id) || !Number.isInteger(companyId) || companyId <= 0) {
+      return NextResponse.json({ success: false, error: "شناسه دوره و شرکت الزامی هستند" }, { status: 400 });
     }
     if (!["open", "closed"].includes(status)) {
       return NextResponse.json({ success: false, error: "وضعیت دوره باید open یا closed باشد" }, { status: 400 });
     }
 
     const { rows } = await pool.query(
-      `UPDATE payroll_periods SET status=$1, updated_at=CURRENT_TIMESTAMP WHERE id=$2 RETURNING *`,
-      [status, id]
+      `UPDATE payroll_periods
+       SET status=$1, updated_at=CURRENT_TIMESTAMP
+       WHERE id=$2 AND company_id=$3
+       RETURNING *`,
+      [status, id, companyId]
     );
 
     if (!rows.length) {
-      return NextResponse.json({ success: false, error: "دوره موردنظر پیدا نشد" }, { status: 404 });
+      return NextResponse.json({ success: false, error: "دوره موردنظر برای این شرکت پیدا نشد" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, data: rows[0] });
