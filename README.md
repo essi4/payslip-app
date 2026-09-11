@@ -22,4 +22,4 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 The app is deployed from the `main` branch. Production deployments should be validated after security changes before exposing the payroll application to users.
 
-<!-- Vercel Git integration deployment trigger: 2026-09-10 -->
+<!-- Vercel Git integration deployment trigger: 2026-09-11 -->
