@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "../../lib/db";
 import { hashPassword, verifyPassword } from "../../lib/password";
 import { createEmployeeSession, getEmployeeSession } from "../../lib/employee-auth";
+import { logSecurityEvent } from "../../lib/security-log";
 
 export const dynamic = "force-dynamic";
 
@@ -20,20 +21,20 @@ export async function POST(request) {
     let response;
 
     if (session) {
-      // Once authenticated, the employee identity comes only from the signed HttpOnly session.
       employeeResult = await pool.query(
         `SELECT id, full_name, national_id, personnel_code, department, job_title
          FROM personnel WHERE id = $1 LIMIT 1`,
         [session.employeeId]
       );
       if (!employeeResult.rows.length) {
+        await logSecurityEvent({ employeeId: session.employeeId, event: "employee_session_invalid", request, success: false });
         return NextResponse.json({ success: false, error: "نشست کاربری معتبر نیست." }, { status: 401 });
       }
     } else {
-      // Password is accepted only for creating a new session, never for session-authenticated access.
       const nationalId = cleanNationalId(body?.national_id);
       const password = String(body?.password || "");
       if (nationalId.length !== 10 || !password) {
+        await logSecurityEvent({ event: "employee_login", request, success: false, details: { reason: "invalid_input" } });
         return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
       }
 
@@ -43,12 +44,14 @@ export async function POST(request) {
         [nationalId]
       );
       if (!employeeResult.rows.length) {
+        await logSecurityEvent({ event: "employee_login", request, success: false, details: { reason: "invalid_credentials" } });
         return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
       }
 
       const employee = employeeResult.rows[0];
       const check = await verifyPassword(password, employee.payslip_password);
       if (!check.valid) {
+        await logSecurityEvent({ employeeId: employee.id, event: "employee_login", request, success: false, details: { reason: "invalid_credentials" } });
         return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
       }
 
@@ -56,6 +59,7 @@ export async function POST(request) {
         await pool.query("UPDATE personnel SET payslip_password=$1 WHERE id=$2", [await hashPassword(password), employee.id]);
       }
       delete employee.payslip_password;
+      await logSecurityEvent({ employeeId: employee.id, event: "employee_login", request, success: true });
 
       response = NextResponse.json({ success: true, employee, months: [] });
       createEmployeeSession(response, employee.id);
