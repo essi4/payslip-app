@@ -42,17 +42,15 @@ export async function POST(request) {
     } else {
       const nationalId = cleanNationalId(body?.national_id);
       const password = String(body?.password || "");
-      if (nationalId.length !== 10 || !password) {
-        const ipLimit = await checkRateLimit({ scope: "employee_login_ip", key: requestIp, maxAttempts: 20, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 });
-        await logSecurityEvent({ event: ipLimit.allowed ? "employee_login" : "employee_login_rate_limit", request, success: false, details: { reason: "invalid_input" } });
-        if (!ipLimit.allowed) return rateLimitedResponse(ipLimit.retryAfterSeconds);
-        return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
-      }
-
       const ipLimit = await checkRateLimit({ scope: "employee_login_ip", key: requestIp, maxAttempts: 20, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 });
       if (!ipLimit.allowed) {
         await logSecurityEvent({ event: "employee_login_rate_limit", request, success: false, details: { reason: "ip_limit" } });
         return rateLimitedResponse(ipLimit.retryAfterSeconds);
+      }
+
+      if (nationalId.length !== 10 || !password) {
+        await logSecurityEvent({ event: "employee_login", request, success: false, details: { reason: "invalid_input" } });
+        return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
       }
 
       employeeResult = await pool.query(
@@ -75,11 +73,6 @@ export async function POST(request) {
       const check = await verifyPassword(password, employee.payslip_password);
       if (!check.valid) {
         await logSecurityEvent({ employeeId: employee.id, event: "employee_login", request, success: false, details: { reason: "invalid_credentials" } });
-        const nextAccountLimit = await checkRateLimit({ scope: "employee_login_account", key: nationalId, maxAttempts: 5, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 });
-        if (!nextAccountLimit.allowed) {
-          await logSecurityEvent({ employeeId: employee.id, event: "employee_login_rate_limit", request, success: false, details: { reason: "account_limit" } });
-          return rateLimitedResponse(nextAccountLimit.retryAfterSeconds);
-        }
         return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
       }
 
