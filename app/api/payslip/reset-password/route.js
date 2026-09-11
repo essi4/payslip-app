@@ -10,12 +10,13 @@ export async function POST(request) {
     const code = String(body?.recovery_code ?? body?.code ?? "").trim();
     const newPassword = String(body?.new_password || "");
 
-    if (nationalId.length !== 10) return NextResponse.json({ success: false, error: "کد ملی باید ۱۰ رقمی باشد." }, { status: 400 });
-    if (!personnelCode) return NextResponse.json({ success: false, error: "کد پرسنلی الزامی است." }, { status: 400 });
-    if (!/^\d{6}$/.test(code)) return NextResponse.json({ success: false, error: "کد بازیابی باید ۶ رقمی باشد." }, { status: 400 });
-    if (newPassword.length < 6) return NextResponse.json({ success: false, error: "رمز عبور جدید باید حداقل ۶ کاراکتر باشد." }, { status: 400 });
+    if (nationalId.length !== 10 || !personnelCode || !/^\d{6}$/.test(code)) {
+      return NextResponse.json({ success: false, error: "کد بازیابی صحیح یا معتبر نیست." }, { status: 400 });
+    }
+    if (newPassword.length < 8) {
+      return NextResponse.json({ success: false, error: "رمز عبور جدید باید حداقل ۸ کاراکتر باشد." }, { status: 400 });
+    }
 
-    // Keep recovery compatible with existing production databases.
     await pool.query(`
       ALTER TABLE personnel
       ADD COLUMN IF NOT EXISTS password_reset_code VARCHAR(6),
@@ -33,6 +34,6 @@ export async function POST(request) {
     return NextResponse.json({ success: true, message: "رمز عبور با موفقیت تغییر کرد." });
   } catch (error) {
     console.error("RESET PASSWORD ERROR:", error);
-    return NextResponse.json({ success: false, error: "خطا در تغییر رمز عبور." }, { status: 500 });
+    return NextResponse.json({ success: false, error: "تغییر رمز عبور انجام نشد. دوباره تلاش کنید." }, { status: 500 });
   }
 }
