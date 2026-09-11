@@ -105,6 +105,25 @@ export async function DELETE(request) {
       return NextResponse.json({ success: false, error: "شناسه شرکت نامعتبر است." }, { status: 400 });
     }
 
+    // Payroll periods are historical records and reference the company directly.
+    // Never let a foreign-key violation turn a normal user action into a 500.
+    const periodCheck = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM payroll_periods WHERE company_id = $1`,
+      [id]
+    );
+
+    const periodCount = periodCheck.rows[0].count;
+
+    if (periodCount > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `این شرکت دارای ${periodCount} دوره حقوق و دستمزد است و به دلیل حفظ سوابق مالی قابل حذف نیست.`,
+        },
+        { status: 409 }
+      );
+    }
+
     const employeeCheck = await pool.query(
       `SELECT COUNT(*)::int AS count FROM personnel WHERE company_id = $1`,
       [id]
@@ -131,6 +150,14 @@ export async function DELETE(request) {
     return NextResponse.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error("DELETE COMPANY ERROR:", error);
+
+    if (error?.code === "23503") {
+      return NextResponse.json(
+        { success: false, error: "این شرکت دارای سوابق وابسته است و برای حفظ اطلاعات مالی قابل حذف نیست." },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json({ success: false, error: "خطا در حذف شرکت." }, { status: 500 });
   }
 }
