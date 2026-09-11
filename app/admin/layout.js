@@ -12,6 +12,7 @@ export default function AdminLayout({ children }) {
     { title: "شرکت‌ها", href: "/admin/companies", icon: "🏢" },
     { title: "دوره‌های حقوق", href: "/admin/payroll-periods", icon: "📅" },
     { title: "فیش‌های حقوقی", href: "/admin/payslips", icon: "📄" },
+    { title: "صدور گروهی فیش", href: "/admin/payslips/bulk", icon: "⚡" },
     { title: "اصلاحات", href: "/admin/corrections", icon: "✏️" },
     { title: "گزارش‌ها", href: "/admin/reports", icon: "📊" },
     { title: "تنظیمات", href: "/admin/settings", icon: "⚙️" },
