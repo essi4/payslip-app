@@ -3,11 +3,19 @@ import pool from "../../lib/db";
 import { hashPassword, verifyPassword } from "../../lib/password";
 import { createEmployeeSession, getEmployeeSession } from "../../lib/employee-auth";
 import { logSecurityEvent } from "../../lib/security-log";
+import { checkRateLimit, clearRateLimit, getRequestIp } from "../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 function cleanNationalId(value) {
   return String(value || "").replace(/[^0-9]/g, "");
+}
+
+function rateLimitedResponse(retryAfterSeconds) {
+  return NextResponse.json(
+    { success: false, error: "تعداد تلاش‌های ورود بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید." },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+  );
 }
 
 export async function POST(request) {
@@ -16,6 +24,7 @@ export async function POST(request) {
     const session = getEmployeeSession(request);
     const month = body?.month ? String(body.month).trim() : "";
     const year = body?.year ? String(body.year).trim() : "";
+    const requestIp = getRequestIp(request);
 
     let employeeResult;
     let response;
@@ -34,8 +43,16 @@ export async function POST(request) {
       const nationalId = cleanNationalId(body?.national_id);
       const password = String(body?.password || "");
       if (nationalId.length !== 10 || !password) {
-        await logSecurityEvent({ event: "employee_login", request, success: false, details: { reason: "invalid_input" } });
+        const ipLimit = await checkRateLimit({ scope: "employee_login_ip", key: requestIp, maxAttempts: 20, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 });
+        await logSecurityEvent({ event: ipLimit.allowed ? "employee_login" : "employee_login_rate_limit", request, success: false, details: { reason: "invalid_input" } });
+        if (!ipLimit.allowed) return rateLimitedResponse(ipLimit.retryAfterSeconds);
         return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
+      }
+
+      const ipLimit = await checkRateLimit({ scope: "employee_login_ip", key: requestIp, maxAttempts: 20, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 });
+      if (!ipLimit.allowed) {
+        await logSecurityEvent({ event: "employee_login_rate_limit", request, success: false, details: { reason: "ip_limit" } });
+        return rateLimitedResponse(ipLimit.retryAfterSeconds);
       }
 
       employeeResult = await pool.query(
@@ -49,9 +66,20 @@ export async function POST(request) {
       }
 
       const employee = employeeResult.rows[0];
+      const accountLimit = await checkRateLimit({ scope: "employee_login_account", key: nationalId, maxAttempts: 5, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 });
+      if (!accountLimit.allowed) {
+        await logSecurityEvent({ employeeId: employee.id, event: "employee_login_rate_limit", request, success: false, details: { reason: "account_limit" } });
+        return rateLimitedResponse(accountLimit.retryAfterSeconds);
+      }
+
       const check = await verifyPassword(password, employee.payslip_password);
       if (!check.valid) {
         await logSecurityEvent({ employeeId: employee.id, event: "employee_login", request, success: false, details: { reason: "invalid_credentials" } });
+        const nextAccountLimit = await checkRateLimit({ scope: "employee_login_account", key: nationalId, maxAttempts: 5, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 });
+        if (!nextAccountLimit.allowed) {
+          await logSecurityEvent({ employeeId: employee.id, event: "employee_login_rate_limit", request, success: false, details: { reason: "account_limit" } });
+          return rateLimitedResponse(nextAccountLimit.retryAfterSeconds);
+        }
         return NextResponse.json({ success: false, error: "کد ملی یا رمز عبور اشتباه است." }, { status: 401 });
       }
 
@@ -59,6 +87,8 @@ export async function POST(request) {
         await pool.query("UPDATE personnel SET payslip_password=$1 WHERE id=$2", [await hashPassword(password), employee.id]);
       }
       delete employee.payslip_password;
+      await clearRateLimit({ scope: "employee_login_account", key: nationalId });
+      await clearRateLimit({ scope: "employee_login_ip", key: requestIp });
       await logSecurityEvent({ employeeId: employee.id, event: "employee_login", request, success: true });
 
       response = NextResponse.json({ success: true, employee, months: [] });
