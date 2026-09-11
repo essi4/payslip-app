@@ -35,6 +35,7 @@ export default function BulkPayslipsPage() {
   const mission = n(missionDays) * daily + n(missionHours) * hourly;
   const seniorityAmount = seniority ? n(workDays) * RATE : 0;
   const estimatedNet = n(baseSalary) + mission + seniorityAmount;
+  const printableIds = useMemo(() => (result?.results || []).filter((x) => x.status === "created" && x.payslip_id).map((x) => x.payslip_id).join(","), [result]);
 
   async function loadCompanies() {
     setLoading(true); setError("");
@@ -89,7 +90,7 @@ export default function BulkPayslipsPage() {
       });
       const d = await r.json();
       if (!r.ok || !d.success) throw new Error(d.error || "صدور گروهی ناموفق بود");
-      setResult(d.summary); setMessage(d.message); setSelected([]);
+      setResult({ ...(d.summary || {}), results: Array.isArray(d.results) ? d.results : [] }); setMessage(d.message); setSelected([]);
     } catch (e) { setError(e.message); } finally { setSaving(false); }
   }
 
@@ -138,7 +139,7 @@ export default function BulkPayslipsPage() {
 
         {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-black text-red-700">🔴 {error}</div>}
         {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-700">🟢 {message}</div>}
-        {result && <div className="grid grid-cols-3 gap-2"><div className="rounded-2xl bg-slate-900 p-4 text-center text-white"><div className="text-[10px]">کل</div><strong className="mt-1 block text-xl">{result.total}</strong></div><div className="rounded-2xl bg-emerald-600 p-4 text-center text-white"><div className="text-[10px]">صادر شد</div><strong className="mt-1 block text-xl">{result.created}</strong></div><div className="rounded-2xl bg-amber-500 p-4 text-center text-white"><div className="text-[10px]">تکراری</div><strong className="mt-1 block text-xl">{result.skipped}</strong></div></div>}
+        {result && <div className="space-y-3"><div className="grid grid-cols-3 gap-2"><div className="rounded-2xl bg-slate-900 p-4 text-center text-white"><div className="text-[10px]">کل</div><strong className="mt-1 block text-xl">{result.total}</strong></div><div className="rounded-2xl bg-emerald-600 p-4 text-center text-white"><div className="text-[10px]">صادر شد</div><strong className="mt-1 block text-xl">{result.created}</strong></div><div className="rounded-2xl bg-amber-500 p-4 text-center text-white"><div className="text-[10px]">تکراری</div><strong className="mt-1 block text-xl">{result.skipped}</strong></div></div>{printableIds && <a href={`/admin/payslips/print?ids=${encodeURIComponent(printableIds)}`} className="flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg transition hover:bg-emerald-700">🖨️ چاپ همین فیش‌های صادرشده ({result.created.toLocaleString("fa-IR")})</a>}</div>}
 
         <button disabled={saving || !selected.length} onClick={submit} className="w-full rounded-3xl bg-gradient-to-l from-blue-700 to-blue-900 px-5 py-4 text-sm font-black text-white shadow-xl transition hover:from-blue-800 hover:to-slate-950 disabled:cursor-not-allowed disabled:opacity-40">{saving ? "در حال صدور گروهی و محاسبه فیش‌ها..." : `صدور ${selected.length.toLocaleString("fa-IR")} فیش حقوقی`}</button>
         <p className="pb-5 text-center text-[10px] font-bold leading-6 text-slate-500">صدور گروهی داخل تراکنش انجام می‌شود؛ اگر خطای جدی رخ دهد، هیچ فیش ناقصی ثبت نخواهد شد.</p>
