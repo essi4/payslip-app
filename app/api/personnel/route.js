@@ -5,8 +5,27 @@ import { hashPassword } from "../../lib/password";
 export async function GET(request) {
   const authError = requireAdmin(request);
   if (authError) return authError;
+
   try {
-    const result = await pool.query(`SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.department, p.job_title, p.bank_account, p.job_group, p.company_id, p.created_at, c.name AS company_name FROM personnel p LEFT JOIN companies c ON c.id=p.company_id ORDER BY p.id DESC`);
+    const { searchParams } = new URL(request.url);
+    const companyIdParam = searchParams.get("company_id");
+
+    let result;
+    if (companyIdParam !== null) {
+      const companyId = Number(companyIdParam);
+      if (!Number.isInteger(companyId) || companyId <= 0) {
+        return Response.json({ success: false, error: "شناسه شرکت نامعتبر است." }, { status: 400 });
+      }
+
+      if (!(await companyExists(companyId))) {
+        return Response.json({ success: false, error: "شرکت انتخاب‌شده پیدا نشد." }, { status: 404 });
+      }
+
+      result = await pool.query(`SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.department, p.job_title, p.bank_account, p.job_group, p.company_id, p.created_at, c.name AS company_name FROM personnel p LEFT JOIN companies c ON c.id=p.company_id WHERE p.company_id=$1 ORDER BY p.id DESC`, [companyId]);
+    } else {
+      result = await pool.query(`SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.department, p.job_title, p.bank_account, p.job_group, p.company_id, p.created_at, c.name AS company_name FROM personnel p LEFT JOIN companies c ON c.id=p.company_id ORDER BY p.id DESC`);
+    }
+
     return Response.json({ success: true, data: result.rows });
   } catch (error) {
     console.error("Personnel GET error:", error);
@@ -18,7 +37,10 @@ async function companyExists(companyId) {
   const result = await pool.query("SELECT id FROM companies WHERE id=$1", [companyId]);
   return result.rowCount > 0;
 }
-function cleanNationalId(value) { return String(value || "").replace(/[^0-9]/g, ""); }
+
+function cleanNationalId(value) {
+  return String(value || "").replace(/[^0-9]/g, "");
+}
 
 export async function POST(request) {
   const authError = requireAdmin(request);
@@ -69,16 +91,21 @@ export async function DELETE(request) {
   try {
     const body = await request.json();
     const id = Number(body.id);
+    const requestedCompanyId = body.company_id === undefined || body.company_id === null || body.company_id === "" ? null : Number(body.company_id);
 
     if (!Number.isInteger(id) || id <= 0) {
       return Response.json({ success: false, error: "شناسه کارمند نامعتبر است." }, { status: 400 });
+    }
+
+    if (requestedCompanyId !== null && (!Number.isInteger(requestedCompanyId) || requestedCompanyId <= 0)) {
+      return Response.json({ success: false, error: "شناسه شرکت نامعتبر است." }, { status: 400 });
     }
 
     client = await pool.connect();
     await client.query("BEGIN");
 
     const employee = await client.query(
-      "SELECT id, full_name FROM personnel WHERE id=$1 FOR UPDATE",
+      "SELECT id, full_name, company_id FROM personnel WHERE id=$1 FOR UPDATE",
       [id]
     );
 
@@ -87,7 +114,11 @@ export async function DELETE(request) {
       return Response.json({ success: false, error: "کارمند پیدا نشد." }, { status: 404 });
     }
 
-    // حذف دائمی: ابتدا تمام فیش‌های وابسته حذف می‌شوند تا محدودیت FK مانع حذف کارمند نشود.
+    if (requestedCompanyId !== null && Number(employee.rows[0].company_id) !== requestedCompanyId) {
+      await client.query("ROLLBACK");
+      return Response.json({ success: false, error: "این کارمند متعلق به شرکت انتخاب‌شده نیست." }, { status: 409 });
+    }
+
     await client.query("DELETE FROM payslips WHERE personnel_id=$1", [id]);
 
     const result = await client.query(
