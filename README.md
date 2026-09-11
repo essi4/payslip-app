@@ -16,10 +16,10 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing-fonts) for font optimization.
+This project uses `next/font` for font optimization.
 
 ## Deploy on Vercel
 
-The app is deployed from the `main` branch. Production deployments should be validated after security changes before exposing the payroll application to users.
+The app is deployed from the `main` branch. Production deployments should be validated after security and employee payslip UI changes before exposing the payroll application to users.
 
-<!-- Vercel Git integration deployment trigger: 2026-09-11 security-account-center -->
+<!-- Vercel Git integration deployment trigger: 2026-09-11 employee-payslip-ui -->
