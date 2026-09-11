@@ -32,9 +32,11 @@ export async function POST(request) {
     const passwordHash = await hashPassword(newPassword);
     const result = await pool.query(
       `UPDATE personnel SET payslip_password=$1, password_reset_code=NULL, password_reset_expires_at=NULL
-       WHERE national_id=$2 AND personnel_code=$3 AND password_reset_code=$4 AND password_reset_expires_at > CURRENT_TIMESTAMP
+       WHERE national_id=$2 AND personnel_code=$3
+         AND (password_reset_code=$4 OR password_reset_code=$5)
+         AND password_reset_expires_at > CURRENT_TIMESTAMP
        RETURNING id`,
-      [passwordHash, nationalId, personnelCode, codeHash]
+      [passwordHash, nationalId, personnelCode, codeHash, code]
     );
     if (!result.rowCount) return NextResponse.json({ success: false, error: "کد بازیابی صحیح یا معتبر نیست." }, { status: 400 });
     return NextResponse.json({ success: true, message: "رمز عبور با موفقیت تغییر کرد." });
