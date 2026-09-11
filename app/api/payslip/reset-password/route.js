@@ -2,6 +2,7 @@ import crypto from "crypto";
 import pool from "../../../lib/db";
 import { NextResponse } from "next/server";
 import { hashPassword } from "../../../lib/password";
+import { logSecurityEvent } from "../../../lib/security-log";
 
 function hashRecoveryCode(code) {
   return crypto.createHash("sha256").update(String(code)).digest("hex");
@@ -15,19 +16,10 @@ export async function POST(request) {
     const code = String(body?.recovery_code ?? body?.code ?? "").trim();
     const newPassword = String(body?.new_password || "");
 
-    if (nationalId.length !== 10 || !personnelCode || !/^\d{6}$/.test(code)) {
-      return NextResponse.json({ success: false, error: "کد بازیابی صحیح یا معتبر نیست." }, { status: 400 });
-    }
-    if (newPassword.length < 8) {
-      return NextResponse.json({ success: false, error: "رمز عبور جدید باید حداقل ۸ کاراکتر باشد." }, { status: 400 });
-    }
+    if (nationalId.length !== 10 || !personnelCode || !/^\d{6}$/.test(code)) return NextResponse.json({ success: false, error: "کد بازیابی صحیح یا معتبر نیست." }, { status: 400 });
+    if (newPassword.length < 8) return NextResponse.json({ success: false, error: "رمز عبور جدید باید حداقل ۸ کاراکتر باشد." }, { status: 400 });
 
-    await pool.query(`
-      ALTER TABLE personnel
-      ADD COLUMN IF NOT EXISTS password_reset_code VARCHAR(64),
-      ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMP
-    `);
-
+    await pool.query(`ALTER TABLE personnel ADD COLUMN IF NOT EXISTS password_reset_code VARCHAR(64), ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMP`);
     const codeHash = hashRecoveryCode(code);
     const passwordHash = await hashPassword(newPassword);
     const result = await pool.query(
@@ -38,7 +30,12 @@ export async function POST(request) {
        RETURNING id`,
       [passwordHash, nationalId, personnelCode, codeHash, code]
     );
-    if (!result.rowCount) return NextResponse.json({ success: false, error: "کد بازیابی صحیح یا معتبر نیست." }, { status: 400 });
+    if (!result.rowCount) {
+      await logSecurityEvent({ event: "password_reset", request, success: false, details: { reason: "invalid_or_expired_code" } });
+      return NextResponse.json({ success: false, error: "کد بازیابی صحیح یا معتبر نیست." }, { status: 400 });
+    }
+    const employeeId = result.rows[0].id;
+    await logSecurityEvent({ employeeId, event: "password_reset", request, success: true });
     return NextResponse.json({ success: true, message: "رمز عبور با موفقیت تغییر کرد." });
   } catch (error) {
     console.error("RESET PASSWORD ERROR:", error);
