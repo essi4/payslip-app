@@ -5,6 +5,13 @@ import { requireAdmin } from "../../lib/admin-auth";
 export const dynamic = "force-dynamic";
 
 const PERSIAN_MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+let schemaReady;
+async function ensurePayslipColumns() {
+  if (!schemaReady) {
+    schemaReady = pool.query(`ALTER TABLE payslips ADD COLUMN IF NOT EXISTS seniority_allowance NUMERIC DEFAULT 0, ADD COLUMN IF NOT EXISTS mission_allowance NUMERIC DEFAULT 0`).catch((error) => { schemaReady = null; throw error; });
+  }
+  return schemaReady;
+}
 function toNumber(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
 function normalizeMonth(value) { const raw = String(value ?? "").trim(); const numeric = Number(raw); if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 12) return numeric; const index = PERSIAN_MONTHS.indexOf(raw); return index >= 0 ? index + 1 : null; }
 function calculate(body) {
@@ -26,6 +33,7 @@ function crossCompanyResponse() { return NextResponse.json({ success: false, err
 export async function GET(request) {
   const authError = requireAdmin(request); if (authError) return authError;
   try {
+    await ensurePayslipColumns();
     const searchParams = new URL(request.url).searchParams;
     const companyId = Number(searchParams.get("company_id"));
     if (!Number.isInteger(companyId) || companyId <= 0) return NextResponse.json({ success: false, error: "انتخاب شرکت برای مشاهده فیش‌ها الزامی است." }, { status: 400 });
@@ -39,6 +47,7 @@ export async function GET(request) {
 export async function POST(request) {
   const authError = requireAdmin(request); if (authError) return authError;
   try {
+    await ensurePayslipColumns();
     const body = await request.json(); const personnelId = Number(body.personnel_id);
     if (!Number.isInteger(personnelId) || personnelId <= 0) return NextResponse.json({ success: false, error: "لطفاً کارمند را انتخاب کنید." }, { status: 400 });
     const employee = await getEmployee(personnelId); if (!employee) return NextResponse.json({ success: false, error: "کارمند انتخاب شده وجود ندارد." }, { status: 400 });
@@ -54,6 +63,7 @@ export async function POST(request) {
 export async function PUT(request) {
   const authError = requireAdmin(request); if (authError) return authError;
   try {
+    await ensurePayslipColumns();
     const body = await request.json(); const payslipId = Number(body.id), personnelId = Number(body.personnel_id);
     if (!Number.isInteger(payslipId) || payslipId <= 0) return NextResponse.json({ success: false, error: "شناسه فیش مشخص نشده است." }, { status: 400 });
     if (!Number.isInteger(personnelId) || personnelId <= 0) return NextResponse.json({ success: false, error: "لطفاً کارمند را انتخاب کنید." }, { status: 400 });
@@ -74,6 +84,7 @@ export async function PUT(request) {
 export async function DELETE(request) {
   const authError = requireAdmin(request); if (authError) return authError;
   try {
+    await ensurePayslipColumns();
     const body = await request.json(); const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ success: false, error: "شناسه فیش مشخص نشده است." }, { status: 400 });
     const existing = await getPayslipWithPeriod(id); if (!existing) return NextResponse.json({ success: false, error: "فیش موردنظر پیدا نشد." }, { status: 404 });
@@ -81,5 +92,5 @@ export async function DELETE(request) {
     const result = await pool.query("DELETE FROM payslips WHERE id=$1 RETURNING id", [id]);
     if (!result.rows.length) return NextResponse.json({ success: false, error: "فیش موردنظر پیدا نشد." }, { status: 404 });
     return NextResponse.json({ success: true, message: "فیش حقوقی با موفقیت حذف شد." });
-  } catch (error) { console.error("DELETE payslip error:", error); return NextResponse.json({ success: false, error: "خطا در حذف فیش حقوقی" }, { status: 500 }); }
+  } catch (error) { console.error("DELETE payslips error:", error); return NextResponse.json({ success: false, error: "خطا در حذف فیش حقوقی" }, { status: 500 }); }
 }
