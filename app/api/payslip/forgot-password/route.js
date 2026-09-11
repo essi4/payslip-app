@@ -9,7 +9,6 @@ export async function POST(request) {
     const nationalId = String(body?.national_id || "").replace(/[^0-9]/g, "");
     const personnelCode = String(body?.personnel_code || "").trim();
     if (nationalId.length !== 10 || !personnelCode) return NextResponse.json({ success: false, error: "اطلاعات واردشده معتبر نیست." }, { status: 400 });
-
     await pool.query(`ALTER TABLE personnel ADD COLUMN IF NOT EXISTS password_reset_code VARCHAR(6), ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMP`);
     const result = await pool.query(`SELECT id, full_name, email, password_reset_code, password_reset_expires_at FROM personnel WHERE national_id=$1 AND personnel_code=$2 LIMIT 1`, [nationalId, personnelCode]);
     if (!result.rows.length || !result.rows[0].email) return NextResponse.json({ success: true, message: "اگر اطلاعات کارمند معتبر باشد، کد بازیابی به ایمیل ثبت‌شده ارسال می‌شود." });
