@@ -1,3 +1,5 @@
+import { PAYROLL_1405_GROUP_WAGE_TABLE } from "./payroll-1405-groups";
+
 export const PAYROLL_1405 = Object.freeze({
   minDailyWage: 5541850,
   seniorityDailyRate: 166667,
@@ -20,7 +22,13 @@ export const PAYROLL_1405 = Object.freeze({
   ],
 });
 
-export const PAYROLL_1405_GROUP_WAGES = Object.freeze({ 6: 6292029.3 });
+// 1405 statutory 20-group table, with the company's already-confirmed
+// group-6 wage preserved as a company-specific override.
+export const PAYROLL_1405_GROUP_WAGES = Object.freeze({
+  ...PAYROLL_1405_GROUP_WAGE_TABLE,
+  6: 6292029.3,
+});
+
 export function payrollNumber(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
 export function clampPayroll(value, min, max) { return Math.min(max, Math.max(min, payrollNumber(value))); }
 export function roundPayroll(value) { return Math.round(payrollNumber(value)); }
