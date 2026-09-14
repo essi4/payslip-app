@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 const STANDARD_HOURS_PER_DAY = 7.33;
-const DEFAULT_SENIORITY_DAILY_RATE = 16667;
+const DEFAULT_SENIORITY_DAILY_RATE = 167667;
 const EMPLOYEE_INSURANCE_RATE = 0.07;
 
 function num(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
