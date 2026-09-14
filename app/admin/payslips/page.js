@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 const MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 const STANDARD_HOURS_PER_DAY = 7.33;
 const DEFAULT_SENIORITY_DAILY_RATE = 16667;
+const DISPLAY_CURRENCY = "ریال";
 
 const EMPTY_FORM = {
   personnel_id: "", year: "1405", month: "فروردین", bank_account: "", job_group: "", job_title: "",
@@ -29,7 +30,7 @@ export default function PayslipsPage() {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ ...EMPTY_FORM });
-  const [calculationSettings, setCalculationSettings] = useState({ currency: "تومان", seniority_daily_rate: DEFAULT_SENIORITY_DAILY_RATE });
+  const [calculationSettings, setCalculationSettings] = useState({ currency: DISPLAY_CURRENCY, seniority_daily_rate: DEFAULT_SENIORITY_DAILY_RATE });
 
   const selectedCompany = useMemo(() => companies.find((c) => String(c.id) === String(companyId)), [companies, companyId]);
   const companyEmployees = useMemo(() => employees.filter((e) => Number(e.company_id) === Number(companyId)), [employees, companyId]);
@@ -67,7 +68,7 @@ export default function PayslipsPage() {
     try {
       const response = await fetch("/api/settings", { cache: "no-store" });
       const result = await response.json();
-      if (response.ok && result.success && result.data) setCalculationSettings(result.data);
+      if (response.ok && result.success && result.data) setCalculationSettings({ ...result.data, currency: DISPLAY_CURRENCY });
     } catch (err) { console.error("Calculation settings error:", err); }
   }
 
@@ -162,7 +163,7 @@ export default function PayslipsPage() {
     <div className="payslips-page" dir="rtl">
       <div className="payslips-header"><div className="page-title-row"><div className="title-icon">💰</div><div><h1>مدیریت فیش حقوقی</h1><p>ثبت، صدور و مشاهده فیش حقوق کارکنان شرکت انتخاب‌شده</p></div></div><div className="header-badge"><span>●</span> {selectedCompany ? selectedCompany.name : "شرکتی انتخاب نشده"}</div></div>
       <div className="form-card" style={{ marginBottom: 24 }}><div className="section-header"><div><h2>🏢 شرکت فعال</h2><p>تمام عملیات فیش حقوقی در این صفحه فقط برای شرکت انتخاب‌شده انجام می‌شود.</p></div></div><div className="form-group" style={{ maxWidth: 620 }}><label>انتخاب شرکت</label><select value={companyId} onChange={(e) => handleCompanyChange(e.target.value)}><option value="">انتخاب شرکت...</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}</select></div>{selectedCompany && <div style={{ marginTop: 12, padding: "12px 16px", borderRadius: 10, background: "#eff6ff", color: "#1d4ed8", fontWeight: 600 }}>گزارش و فیش‌های قابل مشاهده: <strong>{selectedCompany.name}</strong></div>}</div>
-      <div className="stats-grid"><div className="stat-card"><div className="stat-icon blue">📄</div><div><span>کل فیش‌های این شرکت</span><strong>{payslips.length.toLocaleString("fa-IR")}</strong></div></div><div className="stat-card"><div className="stat-icon green">👥</div><div><span>کارکنان این شرکت</span><strong>{companyEmployees.length.toLocaleString("fa-IR")}</strong></div></div><div className="stat-card"><div className="stat-icon orange">💵</div><div><span>مجموع خالص پرداختی</span><strong>{payslips.reduce((sum, item) => sum + number(item.net_salary), 0).toLocaleString("fa-IR")}</strong><small>{calculationSettings.currency || "تومان"}</small></div></div><div className="stat-card"><div className="stat-icon purple">📅</div><div><span>دوره جاری</span><strong>{form.year}</strong><small>{form.month}</small></div></div></div>
+      <div className="stats-grid"><div className="stat-card"><div className="stat-icon blue">📄</div><div><span>کل فیش‌های این شرکت</span><strong>{payslips.length.toLocaleString("fa-IR")}</strong></div></div><div className="stat-card"><div className="stat-icon green">👥</div><div><span>کارکنان این شرکت</span><strong>{companyEmployees.length.toLocaleString("fa-IR")}</strong></div></div><div className="stat-card"><div className="stat-icon orange">💵</div><div><span>مجموع خالص پرداختی</span><strong>{payslips.reduce((sum, item) => sum + number(item.net_salary), 0).toLocaleString("fa-IR")}</strong><small>{DISPLAY_CURRENCY}</small></div></div><div className="stat-card"><div className="stat-icon purple">📅</div><div><span>دوره جاری</span><strong>{form.year}</strong><small>{form.month}</small></div></div></div>
       <div className="form-card"><div className="section-header"><div><h2>{editingId !== null ? "ویرایش فیش حقوقی" : "صدور فیش جدید"}</h2><p>{editingId !== null ? `اصلاح فیش ${selectedCompany?.name || "شرکت"}` : `صدور فیش برای کارکنان ${selectedCompany?.name || "شرکت"}`}</p></div><div className="section-icon">{editingId !== null ? "✏️" : "➕"}</div></div>
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
@@ -191,23 +192,23 @@ export default function PayslipsPage() {
           <div style={{ margin: "18px 0", padding: "16px", borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
             <div style={{ fontWeight: 800, marginBottom: 8 }}>⚙️ محاسبه خودکار</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10, color: "#475569" }}>
-              <div>مزد روزانه: <strong>{dailyWage.toLocaleString("fa-IR")} {calculationSettings.currency || "تومان"}</strong></div>
-              <div>مزد ساعتی: <strong>{hourlyWage.toLocaleString("fa-IR")} {calculationSettings.currency || "تومان"}</strong></div>
-              <div>مبلغ مأموریت: <strong style={{ color: "#2563eb" }}>{mission.toLocaleString("fa-IR")} {calculationSettings.currency || "تومان"}</strong></div>
-              <div>سنوات روزانه: <strong>{seniorityDailyRate.toLocaleString("fa-IR")} {calculationSettings.currency || "تومان"}</strong></div>
-              <div>مبلغ سنوات: <strong style={{ color: "#059669" }}>{seniority.toLocaleString("fa-IR")} {calculationSettings.currency || "تومان"}</strong></div>
+              <div>مزد روزانه: <strong>{dailyWage.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div>
+              <div>مزد ساعتی: <strong>{hourlyWage.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div>
+              <div>مبلغ مأموریت: <strong style={{ color: "#2563eb" }}>{mission.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div>
+              <div>سنوات روزانه: <strong>{seniorityDailyRate.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div>
+              <div>مبلغ سنوات: <strong style={{ color: "#059669" }}>{seniority.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div>
             </div>
             <small style={{ display: "block", marginTop: 10, color: "#64748b" }}>مأموریت بر پایه مزد روزانه و ساعتی محاسبه می‌شود؛ پایه سنوات نیز بر اساس روزهای کارکرد و نرخ روز سنوات سامانه محاسبه می‌شود.</small>
           </div>
-          <div className="salary-summary"><div className="summary-item"><span>حقوق پایه</span><strong>{base.toLocaleString("fa-IR")} تومان</strong></div><div className="summary-item"><span>مجموع مزایا</span><strong className="positive">{totalBenefits.toLocaleString("fa-IR")} تومان</strong></div><div className="summary-item"><span>مجموع کسورات</span><strong className="negative">{totalDeductions.toLocaleString("fa-IR")} تومان</strong></div><div className="net-summary"><span>خالص پرداختی</span><strong>{netSalary.toLocaleString("fa-IR")}</strong><small>تومان</small></div></div>
+          <div className="salary-summary"><div className="summary-item"><span>حقوق پایه</span><strong>{base.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div><div className="summary-item"><span>مجموع مزایا</span><strong className="positive">{totalBenefits.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div><div className="summary-item"><span>مجموع کسورات</span><strong className="negative">{totalDeductions.toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</strong></div><div className="net-summary"><span>خالص پرداختی</span><strong>{netSalary.toLocaleString("fa-IR")}</strong><small>{DISPLAY_CURRENCY}</small></div></div>
           <div className="form-actions"><button type="submit" disabled={saving || !companyId} className="submit-button">{saving ? "در حال ذخیره..." : editingId !== null ? "✓ ذخیره تغییرات" : "✓ ثبت و صدور فیش حقوقی"}</button>{editingId !== null && <button type="button" onClick={resetForm} className="back-button">لغو ویرایش</button>}</div>
         </form>
       </div>
-      <div className="table-card"><div className="section-header table-header"><div><h2>فیش‌های صادر شده</h2><p>لیست فیش‌های صادرشده فقط برای {selectedCompany?.name}</p></div><span className="count-badge">{payslips.length.toLocaleString("fa-IR")} فیش</span></div>{error && <div style={{ margin: "0 20px 16px", padding: 12, borderRadius: 10, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}<div className="table-wrapper"><table><thead><tr><th>#</th><th>کارمند</th><th>کد پرسنلی</th><th>شرکت</th><th>دوره</th><th>حقوق پایه</th><th>مأموریت</th><th>سنوات</th><th>خالص پرداختی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{payslips.length === 0 ? <tr><td colSpan="11" className="empty-cell">برای این شرکت هنوز فیشی صادر نشده است.</td></tr> : payslips.map((payslip, index) => <tr key={payslip.id}><td>{index + 1}</td><td className="employee-name">{payslip.full_name || "نامشخص"}</td><td>{payslip.personnel_code || "---"}</td><td>{payslip.company_name || selectedCompany?.name || "---"}</td><td>{payslip.month} {payslip.year}</td><td>{number(payslip.base_salary).toLocaleString("fa-IR")} تومان</td><td>{number(payslip.mission_allowance).toLocaleString("fa-IR")} تومان</td><td>{number(payslip.seniority_allowance).toLocaleString("fa-IR")} تومان</td><td className="net-value">{number(payslip.net_salary).toLocaleString("fa-IR")} تومان</td><td><span className="status-badge">صادر شده</span></td><td><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><a href={`/admin/payslips/${payslip.id}`} className="view-button">👁 مشاهده</a><button type="button" onClick={() => handleEdit(payslip)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#f59e0b", color: "#fff" }}>✏️ ویرایش</button><button type="button" onClick={() => handleDelete(payslip.id)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#ef4444", color: "#fff" }}>🗑 حذف</button></div></td></tr>)}</tbody></table></div></div>
+      <div className="table-card"><div className="section-header table-header"><div><h2>فیش‌های صادر شده</h2><p>لیست فیش‌های صادرشده فقط برای {selectedCompany?.name}</p></div><span className="count-badge">{payslips.length.toLocaleString("fa-IR")} فیش</span></div>{error && <div style={{ margin: "0 20px 16px", padding: 12, borderRadius: 10, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}<div className="table-wrapper"><table><thead><tr><th>#</th><th>کارمند</th><th>کد پرسنلی</th><th>شرکت</th><th>دوره</th><th>حقوق پایه</th><th>مأموریت</th><th>سنوات</th><th>خالص پرداختی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{payslips.length === 0 ? <tr><td colSpan="11" className="empty-cell">برای این شرکت هنوز فیشی صادر نشده است.</td></tr> : payslips.map((payslip, index) => <tr key={payslip.id}><td>{index + 1}</td><td className="employee-name">{payslip.full_name || "نامشخص"}</td><td>{payslip.personnel_code || "---"}</td><td>{payslip.company_name || selectedCompany?.name || "---"}</td><td>{payslip.month} {payslip.year}</td><td>{number(payslip.base_salary).toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</td><td>{number(payslip.mission_allowance).toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</td><td>{number(payslip.seniority_allowance).toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</td><td className="net-value">{number(payslip.net_salary).toLocaleString("fa-IR")} {DISPLAY_CURRENCY}</td><td><span className="status-badge">صادر شده</span></td><td><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><a href={`/admin/payslips/${payslip.id}`} className="view-button">👁 مشاهده</a><button type="button" onClick={() => handleEdit(payslip)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#f59e0b", color: "#fff" }}>✏️ ویرایش</button><button type="button" onClick={() => handleDelete(payslip.id)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#ef4444", color: "#fff" }}>🗑 حذف</button></div></td></tr>)}</tbody></table></div></div>
     </div>
   );
 }
 
 function MoneyInput({ label, value, onChange, deduction = false }) {
-  return <div className="form-group"><label>{label}</label><div className={`input-with-label ${deduction ? "deduction" : ""}`}><input type="number" min="0" value={value} onChange={(event) => onChange(event.target.value)} placeholder="0" /><span>تومان</span></div></div>;
+  return <div className="form-group"><label>{label}</label><div className={`input-with-label ${deduction ? "deduction" : ""}`}><input type="number" min="0" value={value} onChange={(event) => onChange(event.target.value)} placeholder="0" /><span>{DISPLAY_CURRENCY}</span></div></div>;
 }
