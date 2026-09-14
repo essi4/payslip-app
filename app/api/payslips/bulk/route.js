@@ -7,19 +7,10 @@ export const dynamic = "force-dynamic";
 const MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 const STANDARD_HOURS_PER_DAY = 7.33;
 const DEFAULT_SENIORITY_DAILY_RATE = 16667;
+const EMPLOYEE_INSURANCE_RATE = 0.07;
 
-function num(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function normalizeMonth(value) {
-  const raw = String(value ?? "").trim();
-  const numeric = Number(raw);
-  if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 12) return numeric;
-  const index = MONTHS.indexOf(raw);
-  return index >= 0 ? index + 1 : null;
-}
+function num(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
+function normalizeMonth(value) { const raw = String(value ?? "").trim(); const numeric = Number(raw); if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 12) return numeric; const index = MONTHS.indexOf(raw); return index >= 0 ? index + 1 : null; }
 
 async function ensureColumns() {
   await pool.query(`
@@ -33,28 +24,49 @@ async function ensureColumns() {
   `);
 }
 
+async function ensureWageGroups() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS wage_groups (
+      id SERIAL PRIMARY KEY,
+      group_number INTEGER NOT NULL UNIQUE CHECK (group_number BETWEEN 1 AND 20),
+      year INTEGER NOT NULL DEFAULT 1405,
+      daily_base_salary NUMERIC NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  for (let groupNumber = 1; groupNumber <= 20; groupNumber += 1) {
+    await pool.query(`INSERT INTO wage_groups (group_number, year, daily_base_salary) VALUES ($1, 1405, $2) ON CONFLICT (group_number) DO NOTHING`, [groupNumber, groupNumber === 6 ? 6292029 : 0]);
+  }
+}
+
+async function getWageGroups(client) {
+  const result = await client.query(`SELECT group_number, daily_base_salary FROM wage_groups WHERE year=1405 ORDER BY group_number`);
+  return new Map(result.rows.map((row) => [Number(row.group_number), num(row.daily_base_salary)]));
+}
+
 async function getSettings(client) {
   try {
     const result = await client.query("SELECT seniority_daily_rate FROM settings ORDER BY id ASC LIMIT 1");
     const rate = num(result.rows[0]?.seniority_daily_rate);
     return rate > 0 ? rate : DEFAULT_SENIORITY_DAILY_RATE;
-  } catch {
-    return DEFAULT_SENIORITY_DAILY_RATE;
-  }
+  } catch { return DEFAULT_SENIORITY_DAILY_RATE; }
 }
 
-function calculate({ baseSalary, workDays, missionDays, missionHours, seniorityEligible, overtime, bonus, housing, food, marriage, child, otherBenefits, insurance, tax, otherDeductions }, seniorityDailyRate) {
-  const base = num(baseSalary);
+function calculate({ dailyBaseSalary, workDays, missionDays, missionHours, seniorityEligible, overtime, bonus, housing, food, marriage, child, otherBenefits, tax, otherDeductions }, seniorityDailyRate) {
   const days = Math.min(31, Math.max(1, num(workDays) || 30));
+  const dailyWage = num(dailyBaseSalary);
+  const base = dailyWage * days;
   const mDays = Math.min(days, Math.max(0, num(missionDays)));
   const mHours = Math.min(days * 24, Math.max(0, num(missionHours)));
-  const dailyWage = base / days;
   const hourlyWage = dailyWage / STANDARD_HOURS_PER_DAY;
   const mission = mDays * dailyWage + mHours * hourlyWage;
   const seniority = seniorityEligible ? days * seniorityDailyRate : 0;
   const benefits = num(overtime) + num(bonus) + mission + seniority + num(housing) + num(food) + num(marriage) + num(child) + num(otherBenefits);
-  const deductions = num(insurance) + num(tax) + num(otherDeductions);
-  return { base, days, mDays, mHours, dailyWage, hourlyWage, mission, seniority, benefits, deductions, netSalary: base + benefits - deductions };
+  const insuranceBase = base + num(overtime) + num(bonus) + mission + seniority + num(housing) + num(food) + num(marriage) + num(child) + num(otherBenefits);
+  const insurance = insuranceBase * EMPLOYEE_INSURANCE_RATE;
+  const deductions = insurance + num(tax) + num(otherDeductions);
+  return { base, days, mDays, mHours, dailyWage, hourlyWage, mission, seniority, benefits, insuranceBase, insurance, deductions, tax: num(tax), netSalary: base + benefits - deductions };
 }
 
 export async function POST(request) {
@@ -64,6 +76,7 @@ export async function POST(request) {
   const client = await pool.connect();
   try {
     await ensureColumns();
+    await ensureWageGroups();
     const body = await request.json();
     const companyId = Number(body.company_id);
     const periodId = Number(body.payroll_period_id);
@@ -89,17 +102,14 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "این دوره حقوق بسته است و صدور فیش جدید مجاز نیست." }, { status: 409 });
     }
 
-    const employeesResult = await client.query(
-      `SELECT id, full_name, personnel_code, company_id, bank_account, job_group, job_title
-       FROM personnel WHERE company_id=$1 AND id = ANY($2::int[]) ORDER BY id`,
-      [companyId, employeeIds]
-    );
+    const employeesResult = await client.query(`SELECT id, full_name, personnel_code, company_id, bank_account, job_group, job_title FROM personnel WHERE company_id=$1 AND id = ANY($2::int[]) ORDER BY id`, [companyId, employeeIds]);
     const employees = employeesResult.rows;
     if (employees.length !== employeeIds.length) {
       await client.query("ROLLBACK");
       return NextResponse.json({ success: false, error: "یک یا چند کارمند متعلق به شرکت انتخاب‌شده نیستند یا پیدا نشدند." }, { status: 409 });
     }
 
+    const wageGroups = await getWageGroups(client);
     const settingsRate = await getSettings(client);
     const common = body.defaults && typeof body.defaults === "object" ? body.defaults : body;
     const overrides = body.overrides && typeof body.overrides === "object" ? body.overrides : {};
@@ -115,9 +125,20 @@ export async function POST(request) {
         continue;
       }
 
+      const groupNumber = Number(employee.job_group);
+      const dailyBaseSalary = wageGroups.get(groupNumber) || 0;
+      if (!Number.isInteger(groupNumber) || groupNumber < 1 || groupNumber > 20) {
+        await client.query("ROLLBACK");
+        return NextResponse.json({ success: false, error: `گروه مزدی ${employee.full_name} معتبر نیست؛ ابتدا در مدیریت کارکنان گروه ۱ تا ۲۰ را انتخاب کنید.` }, { status: 400 });
+      }
+      if (dailyBaseSalary <= 0) {
+        await client.query("ROLLBACK");
+        return NextResponse.json({ success: false, error: `مبلغ پایه روزانه گروه ${groupNumber} برای ${employee.full_name} در جدول گروه‌های مزدی تنظیم نشده است.` }, { status: 400 });
+      }
+
       const override = overrides[String(employee.id)] && typeof overrides[String(employee.id)] === "object" ? overrides[String(employee.id)] : {};
       const calc = calculate({
-        baseSalary: override.base_salary ?? common.base_salary,
+        dailyBaseSalary,
         workDays: override.work_days ?? common.work_days,
         missionDays: override.mission_days ?? common.mission_days,
         missionHours: override.mission_hours ?? common.mission_hours,
@@ -129,26 +150,20 @@ export async function POST(request) {
         marriage: override.marriage_allowance ?? common.marriage_allowance,
         child: override.child_allowance ?? common.child_allowance,
         otherBenefits: override.other_benefits ?? common.other_benefits,
-        insurance: override.insurance ?? common.insurance,
         tax: override.tax ?? common.tax,
         otherDeductions: override.other_deductions ?? common.other_deductions,
       }, settingsRate);
-
-      if (calc.base <= 0) {
-        await client.query("ROLLBACK");
-        return NextResponse.json({ success: false, error: `حقوق پایه برای ${employee.full_name} باید بیشتر از صفر باشد.` }, { status: 400 });
-      }
 
       const inserted = await client.query(
         `INSERT INTO payslips
         (personnel_id,payroll_period_id,year,month,bank_account,job_group,job_title,base_salary,overtime,bonus,seniority_allowance,mission_allowance,work_days,mission_days,mission_hours,seniority_eligible,housing_allowance,food_allowance,marriage_allowance,child_allowance,other_benefits,insurance,tax,other_deductions,net_salary)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
         RETURNING id`,
-        [employee.id, periodId, year, month, override.bank_account ?? common.bank_account ?? employee.bank_account ?? "", override.job_group ?? common.job_group ?? employee.job_group ?? "", override.job_title ?? common.job_title ?? employee.job_title ?? "", calc.base, num(override.overtime ?? common.overtime), num(override.bonus ?? common.bonus), calc.seniority, calc.mission, calc.days, calc.mDays, calc.mHours, Boolean(override.seniority_eligible ?? common.seniority_eligible), num(override.housing_allowance ?? common.housing_allowance), num(override.food_allowance ?? common.food_allowance), num(override.marriage_allowance ?? common.marriage_allowance), num(override.child_allowance ?? common.child_allowance), num(override.other_benefits ?? common.other_benefits), num(override.insurance ?? common.insurance), num(override.tax ?? common.tax), num(override.other_deductions ?? common.other_deductions), calc.netSalary]
+        [employee.id, periodId, year, month, override.bank_account ?? common.bank_account ?? employee.bank_account ?? "", String(groupNumber), override.job_title ?? common.job_title ?? employee.job_title ?? "", calc.base, num(override.overtime ?? common.overtime), num(override.bonus ?? common.bonus), calc.seniority, calc.mission, calc.days, calc.mDays, calc.mHours, Boolean(override.seniority_eligible ?? common.seniority_eligible), num(override.housing_allowance ?? common.housing_allowance), num(override.food_allowance ?? common.food_allowance), num(override.marriage_allowance ?? common.marriage_allowance), num(override.child_allowance ?? common.child_allowance), num(override.other_benefits ?? common.other_benefits), calc.insurance, calc.tax, num(override.other_deductions ?? common.other_deductions), calc.netSalary]
       );
 
       created += 1;
-      results.push({ employee_id: employee.id, personnel_code: employee.personnel_code, full_name: employee.full_name, status: "created", payslip_id: inserted.rows[0].id, net_salary: calc.netSalary, mission: calc.mission, seniority: calc.seniority });
+      results.push({ employee_id: employee.id, personnel_code: employee.personnel_code, full_name: employee.full_name, status: "created", payslip_id: inserted.rows[0].id, wage_group: groupNumber, daily_base_salary: dailyBaseSalary, base_salary: calc.base, insurance: calc.insurance, net_salary: calc.netSalary, mission: calc.mission, seniority: calc.seniority });
     }
 
     await client.query("COMMIT");
@@ -157,7 +172,5 @@ export async function POST(request) {
     try { await client.query("ROLLBACK"); } catch {}
     console.error("POST bulk payslips error:", error);
     return NextResponse.json({ success: false, error: "خطا در صدور گروهی فیش‌ها؛ هیچ فیش ناقصی ثبت نشد." }, { status: 500 });
-  } finally {
-    client.release();
-  }
+  } finally { client.release(); }
 }
