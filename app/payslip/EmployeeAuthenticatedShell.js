@@ -44,8 +44,8 @@ export default function EmployeeAuthenticatedShell({ children }) {
   if (!checked) return null;
   if (!authenticated) return children;
 
-  // The root employee URL is intentionally the login landing page only.
-  // Authenticated employees are sent to the dedicated slips page by the login action.
+  // Root /payslip is permanently login-only, even when an employee session exists.
+  // Authenticated employees use /payslip/slips, /payslip/order, and /payslip/account.
   if (normalizedPathname === "/payslip") return children;
 
   return (
