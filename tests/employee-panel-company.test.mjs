@@ -20,7 +20,12 @@ test("employee panel displays a personalized welcome and company", async () => {
   assert.match(source, /company_name/);
 });
 
-test("payslip layout includes the personalized company banner", async () => {
-  const source = await read("app/payslip/layout.js");
-  assert.match(source, /CompanyWelcomeBanner/);
+test("payslip layout gates panel chrome behind the authenticated shell", async () => {
+  const layout = await read("app/payslip/layout.js");
+  const shell = await read("app/payslip/EmployeeAuthenticatedShell.js");
+  assert.match(layout, /EmployeeAuthenticatedShell/);
+  assert.match(shell, /authenticated/);
+  assert.match(shell, /if\s*\(!authenticated\)/);
+  assert.match(shell, /CompanyWelcomeBanner/);
+  assert.match(shell, /EmployeeBottomNav/);
 });
