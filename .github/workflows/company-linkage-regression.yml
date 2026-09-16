@@ -11,5 +11,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Run regression test
+      - name: Run company linkage regression
         run: node tests/company-personnel-payslip.test.mjs
+      - name: Run employee landing regression
+        run: node tests/employee-auth-shell-regression.test.mjs
