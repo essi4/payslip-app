@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import CompanyWelcomeBanner from "./CompanyWelcomeBanner";
 import EmployeeBottomNav from "./EmployeeBottomNav";
 import EmployeeDashboardHome from "./EmployeeDashboardHome";
 
 export default function EmployeeAuthenticatedShell({ children }) {
+  const pathname = usePathname();
   const [authenticated, setAuthenticated] = useState(false);
   const [checked, setChecked] = useState(false);
 
@@ -35,13 +37,14 @@ export default function EmployeeAuthenticatedShell({ children }) {
     };
   }, []);
 
-  if (!checked) return children;
-  if (!authenticated) return children;
+  if (!checked || !authenticated) return children;
+
+  const isHome = pathname === "/payslip";
 
   return (
     <>
       <CompanyWelcomeBanner />
-      <EmployeeDashboardHome />
+      {isHome ? <EmployeeDashboardHome /> : <div className="pt-20 sm:pt-24">{children}</div>}
       <EmployeeBottomNav />
     </>
   );
