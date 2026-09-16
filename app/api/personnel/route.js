@@ -9,8 +9,20 @@ function normalizeEmail(value) {
   return emailRegex.test(email) ? email : undefined;
 }
 
-async function ensureEmailColumn() {
-  await pool.query(`ALTER TABLE personnel ADD COLUMN IF NOT EXISTS email TEXT`);
+async function ensurePersonnelColumns() {
+  await pool.query(`
+    ALTER TABLE personnel
+      ADD COLUMN IF NOT EXISTS email TEXT,
+      ADD COLUMN IF NOT EXISTS mobile TEXT,
+      ADD COLUMN IF NOT EXISTS marital_status TEXT,
+      ADD COLUMN IF NOT EXISTS children_count INTEGER NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS hire_date TEXT,
+      ADD COLUMN IF NOT EXISTS last_order_number TEXT,
+      ADD COLUMN IF NOT EXISTS last_order_date TEXT,
+      ADD COLUMN IF NOT EXISTS bank_iban TEXT,
+      ADD COLUMN IF NOT EXISTS bank_name TEXT,
+      ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE
+  `);
 }
 
 async function ensureWageGroups() {
@@ -50,9 +62,7 @@ async function normalizeJobGroup(value) {
 }
 
 async function assertEmailAvailable(email, employeeId = null) {
-  if (email === undefined) {
-    return { ok: false, error: "فرمت ایمیل صحیح نیست." };
-  }
+  if (email === undefined) return { ok: false, error: "فرمت ایمیل صحیح نیست." };
   if (email === null) return { ok: true };
   const query = employeeId === null
     ? `SELECT id FROM personnel WHERE LOWER(email)=LOWER($1) LIMIT 1`
@@ -63,27 +73,47 @@ async function assertEmailAvailable(email, employeeId = null) {
   return { ok: true };
 }
 
+function cleanNationalId(value) {
+  return String(value || "").replace(/[^0-9]/g, "");
+}
+
+function cleanChildrenCount(value) {
+  const n = Number(value ?? 0);
+  return Number.isInteger(n) && n >= 0 ? n : 0;
+}
+
+async function companyExists(companyId) {
+  const result = await pool.query("SELECT id FROM companies WHERE id=$1", [companyId]);
+  return result.rowCount > 0;
+}
+
+const personnelSelect = `
+  SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.email,
+    p.mobile, p.marital_status, p.children_count, p.hire_date,
+    p.last_order_number, p.last_order_date, p.department, p.job_title,
+    p.bank_account, p.bank_iban, p.bank_name, p.job_group, p.company_id,
+    p.is_active, p.created_at,
+    CASE WHEN p.payslip_password IS NULL OR p.payslip_password='' THEN false ELSE true END AS has_payslip_password,
+    c.name AS company_name
+  FROM personnel p
+  LEFT JOIN companies c ON c.id=p.company_id
+`;
+
 export async function GET(request) {
   const authError = requireAdmin(request);
   if (authError) return authError;
-
   try {
-    await ensureEmailColumn();
+    await ensurePersonnelColumns();
     const { searchParams } = new URL(request.url);
     const companyIdParam = searchParams.get("company_id");
-
     let result;
     if (companyIdParam !== null) {
       const companyId = Number(companyIdParam);
-      if (!Number.isInteger(companyId) || companyId <= 0) {
-        return Response.json({ success: false, error: "شناسه شرکت نامعتبر است." }, { status: 400 });
-      }
-      if (!(await companyExists(companyId))) {
-        return Response.json({ success: false, error: "شرکت انتخاب‌شده پیدا نشد." }, { status: 404 });
-      }
-      result = await pool.query(`SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.email, p.department, p.job_title, p.bank_account, p.job_group, p.company_id, p.created_at, CASE WHEN p.payslip_password IS NULL OR p.payslip_password='' THEN false ELSE true END AS has_payslip_password, c.name AS company_name FROM personnel p LEFT JOIN companies c ON c.id=p.company_id WHERE p.company_id=$1 ORDER BY p.id DESC`, [companyId]);
+      if (!Number.isInteger(companyId) || companyId <= 0) return Response.json({ success: false, error: "شناسه شرکت نامعتبر است." }, { status: 400 });
+      if (!(await companyExists(companyId))) return Response.json({ success: false, error: "شرکت انتخاب‌شده پیدا نشد." }, { status: 404 });
+      result = await pool.query(`${personnelSelect} WHERE p.company_id=$1 ORDER BY p.id DESC`, [companyId]);
     } else {
-      result = await pool.query(`SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.email, p.department, p.job_title, p.bank_account, p.job_group, p.company_id, p.created_at, CASE WHEN p.payslip_password IS NULL OR p.payslip_password='' THEN false ELSE true END AS has_payslip_password, c.name AS company_name FROM personnel p LEFT JOIN companies c ON c.id=p.company_id ORDER BY p.id DESC`);
+      result = await pool.query(`${personnelSelect} ORDER BY p.id DESC`);
     }
     return Response.json({ success: true, data: result.rows });
   } catch (error) {
@@ -92,20 +122,11 @@ export async function GET(request) {
   }
 }
 
-async function companyExists(companyId) {
-  const result = await pool.query("SELECT id FROM companies WHERE id=$1", [companyId]);
-  return result.rowCount > 0;
-}
-
-function cleanNationalId(value) {
-  return String(value || "").replace(/[^0-9]/g, "");
-}
-
 export async function POST(request) {
   const authError = requireAdmin(request);
   if (authError) return authError;
   try {
-    await ensureEmailColumn();
+    await ensurePersonnelColumns();
     const body = await request.json();
     const companyId = Number(body.company_id);
     const fullName = String(body.full_name || "").trim();
@@ -123,7 +144,28 @@ export async function POST(request) {
     if (!emailCheck.ok) return Response.json({ success: false, error: emailCheck.error }, { status: 400 });
     const password = String(body.payslip_password || "").trim();
     const passwordHash = password ? await hashPassword(password) : null;
-    const result = await pool.query(`INSERT INTO personnel (company_id, full_name, national_id, personnel_code, email, department, job_title, bank_account, job_group, payslip_password) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, full_name, national_id, personnel_code, email, department, job_title, bank_account, job_group, company_id, created_at, CASE WHEN payslip_password IS NULL OR payslip_password='' THEN false ELSE true END AS has_payslip_password`, [companyId, fullName, nationalId, personnelCode, email, body.department?.trim() || null, body.job_title?.trim() || null, body.bank_account?.trim() || null, jobGroup.value, passwordHash]);
+    const result = await pool.query(`
+      INSERT INTO personnel (
+        company_id, full_name, national_id, personnel_code, email, mobile,
+        marital_status, children_count, hire_date, last_order_number, last_order_date,
+        department, job_title, bank_account, bank_iban, bank_name, job_group,
+        payslip_password, is_active
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+      RETURNING id, full_name, national_id, personnel_code, email, mobile,
+        marital_status, children_count, hire_date, last_order_number, last_order_date,
+        department, job_title, bank_account, bank_iban, bank_name, job_group,
+        company_id, is_active, created_at,
+        CASE WHEN payslip_password IS NULL OR payslip_password='' THEN false ELSE true END AS has_payslip_password
+    `, [
+      companyId, fullName, nationalId, personnelCode, email,
+      body.mobile?.trim() || null, body.marital_status?.trim() || null,
+      cleanChildrenCount(body.children_count), body.hire_date?.trim() || null,
+      body.last_order_number?.trim() || null, body.last_order_date?.trim() || null,
+      body.department?.trim() || null, body.job_title?.trim() || null,
+      body.bank_account?.trim() || null, body.bank_iban?.trim().toUpperCase() || null,
+      body.bank_name?.trim() || null, jobGroup.value, passwordHash,
+      body.is_active !== false
+    ]);
     return Response.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error("Personnel POST error:", error);
@@ -135,7 +177,7 @@ export async function PUT(request) {
   const authError = requireAdmin(request);
   if (authError) return authError;
   try {
-    await ensureEmailColumn();
+    await ensurePersonnelColumns();
     const body = await request.json();
     const id = Number(body.id);
     const companyId = Number(body.company_id);
@@ -151,6 +193,9 @@ export async function PUT(request) {
     }
     const nationalId = cleanNationalId(body.national_id);
     if (nationalId.length !== 10) return Response.json({ success: false, error: "کد ملی باید ۱۰ رقم باشد." }, { status: 400 });
+    const personnelCode = String(body.personnel_code || "").trim();
+    if (!String(body.full_name || "").trim()) return Response.json({ success: false, error: "نام و نام خانوادگی الزامی است." }, { status: 400 });
+    if (!personnelCode) return Response.json({ success: false, error: "کد پرسنلی الزامی است." }, { status: 400 });
     const jobGroup = await normalizeJobGroup(body.job_group);
     if (!jobGroup.ok) return Response.json({ success: false, error: jobGroup.error }, { status: 400 });
     const suppliedEmail = Object.prototype.hasOwnProperty.call(body, "email") ? normalizeEmail(body.email) : existing.rows[0].email;
@@ -158,7 +203,26 @@ export async function PUT(request) {
     if (!emailCheck.ok) return Response.json({ success: false, error: emailCheck.error }, { status: 400 });
     const suppliedPassword = String(body.payslip_password || "").trim();
     const passwordHash = suppliedPassword ? await hashPassword(suppliedPassword) : existing.rows[0].payslip_password;
-    const result = await pool.query(`UPDATE personnel SET company_id=$1, full_name=$2, national_id=$3, personnel_code=$4, email=$5, department=$6, job_title=$7, bank_account=$8, job_group=$9, payslip_password=$10 WHERE id=$11 RETURNING id, full_name, national_id, personnel_code, email, department, job_title, bank_account, job_group, company_id, created_at, CASE WHEN payslip_password IS NULL OR payslip_password='' THEN false ELSE true END AS has_payslip_password`, [companyId, String(body.full_name || "").trim(), nationalId, String(body.personnel_code || "").trim(), suppliedEmail, body.department?.trim() || null, body.job_title?.trim() || null, body.bank_account?.trim() || null, jobGroup.value, passwordHash, id]);
+    const result = await pool.query(`
+      UPDATE personnel SET
+        company_id=$1, full_name=$2, national_id=$3, personnel_code=$4, email=$5, mobile=$6,
+        marital_status=$7, children_count=$8, hire_date=$9, last_order_number=$10, last_order_date=$11,
+        department=$12, job_title=$13, bank_account=$14, bank_iban=$15, bank_name=$16,
+        job_group=$17, payslip_password=$18, is_active=$19
+      WHERE id=$20
+      RETURNING id, full_name, national_id, personnel_code, email, mobile, marital_status,
+        children_count, hire_date, last_order_number, last_order_date, department, job_title,
+        bank_account, bank_iban, bank_name, job_group, company_id, is_active, created_at,
+        CASE WHEN payslip_password IS NULL OR payslip_password='' THEN false ELSE true END AS has_payslip_password
+    `, [
+      companyId, String(body.full_name || "").trim(), nationalId, personnelCode, suppliedEmail,
+      body.mobile?.trim() || null, body.marital_status?.trim() || null,
+      cleanChildrenCount(body.children_count), body.hire_date?.trim() || null,
+      body.last_order_number?.trim() || null, body.last_order_date?.trim() || null,
+      body.department?.trim() || null, body.job_title?.trim() || null,
+      body.bank_account?.trim() || null, body.bank_iban?.trim().toUpperCase() || null,
+      body.bank_name?.trim() || null, jobGroup.value, passwordHash, body.is_active !== false, id
+    ]);
     return Response.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error("Personnel PUT error:", error);
