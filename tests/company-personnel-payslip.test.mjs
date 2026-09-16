@@ -10,7 +10,7 @@ assert.match(personnelRoute, /company_id/);
 
 assert.match(payslipsRoute, /employee\.job_group/);
 assert.match(payslipsRoute, /employee\.company_id/);
-assert.match(payslipsRoute, /period\.company_id/);
+assert.match(payslipsRoute, /existing\.period_company_id/);
 assert.match(payslipsRoute, /انتقال فیش بین شرکت‌ها مجاز نیست/);
 assert.match(payslipsRoute, /job_group:\s*employee\.job_group/);
 assert.match(payslipsRoute, /job_title:\s*employee\.job_title/);
