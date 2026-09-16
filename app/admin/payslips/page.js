@@ -188,7 +188,8 @@ export default function PayslipsPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
               <Calc label="مزد روزانه گروه" value={calculation.groupDailyWage} />
               <Calc label="حقوق پایه" value={calculation.baseSalary} />
-              <Calc label="سنوات" value={calculation.seniorityAllowance} />
+              <Calc label="سنوات جاری" value={calculation.seniorityAllowance} />
+              <Calc label="مزد سنوات سال‌های گذشته" value={calculation.pastSeniorityAllowance} positive />
               <Calc label="جمع مزایا" value={calculation.totalBenefits} positive />
               <Calc label="مبنای بیمه" value={calculation.insuranceBase} />
               <Calc label="بیمه ۷٪" value={calculation.insurance} negative />
@@ -197,7 +198,7 @@ export default function PayslipsPage() {
               <Calc label="جمع ناخالص" value={calculation.grossSalary} />
               <Calc label="خالص پرداختی" value={calculation.netSalary} strong />
             </div>
-            <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#ecfdf5", color: "#047857", fontWeight: 700 }}>بیمه و مالیات توسط سیستم محاسبه می‌شوند و در فرم دستی قابل ورود نیستند.</div>
+            <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#ecfdf5", color: "#047857", fontWeight: 700 }}>مزد سنوات سال‌های گذشته به‌صورت خودکار با نرخ روزانه ۱٬۶۵۸٬۸۴۸ ریال محاسبه و وارد ناخالص، مبنای بیمه و مالیات می‌شود.</div>
           </div>
 
           <div className="form-actions"><button type="submit" disabled={saving || !companyId} className="submit-button">{saving ? "در حال ذخیره..." : editingId !== null ? "✓ ذخیره فیش" : "✓ ثبت و صدور فیش"}</button>{editingId !== null && <button type="button" onClick={resetForm} className="back-button">لغو ویرایش</button>}</div>
