@@ -18,6 +18,13 @@ function rateLimitedResponse(retryAfterSeconds) {
   );
 }
 
+const EMPLOYEE_SELECT = `
+  SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.department, p.job_title,
+         p.company_id, c.name AS company_name
+  FROM personnel p
+  LEFT JOIN companies c ON c.id = p.company_id
+`;
+
 export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -31,8 +38,7 @@ export async function POST(request) {
 
     if (session) {
       employeeResult = await pool.query(
-        `SELECT id, full_name, national_id, personnel_code, department, job_title
-         FROM personnel WHERE id = $1 LIMIT 1`,
+        `${EMPLOYEE_SELECT} WHERE p.id = $1 LIMIT 1`,
         [session.employeeId]
       );
       if (!employeeResult.rows.length) {
@@ -54,8 +60,7 @@ export async function POST(request) {
       }
 
       employeeResult = await pool.query(
-        `SELECT id, full_name, national_id, personnel_code, department, job_title, payslip_password
-         FROM personnel WHERE national_id = $1 LIMIT 1`,
+        `${EMPLOYEE_SELECT}, p.payslip_password WHERE p.national_id = $1 LIMIT 1`,
         [nationalId]
       );
       if (!employeeResult.rows.length) {
@@ -117,8 +122,11 @@ export async function POST(request) {
               p.marriage_allowance, p.child_allowance, p.other_benefits, p.insurance, p.tax,
               p.other_deductions, p.net_salary, p.created_at,
               e.full_name, e.personnel_code, e.national_id, e.department,
-              e.job_title AS employee_job_title
-       FROM payslips p INNER JOIN personnel e ON p.personnel_id=e.id
+              e.job_title AS employee_job_title,
+              e.company_id, c.name AS company_name
+       FROM payslips p
+       INNER JOIN personnel e ON p.personnel_id=e.id
+       LEFT JOIN companies c ON c.id=e.company_id
        WHERE p.personnel_id=$1 AND p.month=$2 AND p.year=$3 ORDER BY p.id DESC`,
       [employee.id, month, year]
     );
