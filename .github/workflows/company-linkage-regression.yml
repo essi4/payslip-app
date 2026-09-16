@@ -1,0 +1,15 @@
+name: Company Linkage Regression
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run regression test
+        run: node tests/company-personnel-payslip.test.mjs
