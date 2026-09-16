@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import CompanyWelcomeBanner from "./CompanyWelcomeBanner";
 import EmployeeBottomNav from "./EmployeeBottomNav";
+import EmployeeDashboardHome from "./EmployeeDashboardHome";
 
 export default function EmployeeAuthenticatedShell({ children }) {
   const [authenticated, setAuthenticated] = useState(false);
@@ -34,13 +35,14 @@ export default function EmployeeAuthenticatedShell({ children }) {
     };
   }, []);
 
-  if (!checked || !authenticated) return children;
+  if (!checked) return children;
+  if (!authenticated) return children;
 
   return (
     <>
       <CompanyWelcomeBanner />
+      <EmployeeDashboardHome />
       <EmployeeBottomNav />
-      <div className="pt-20 sm:pt-24">{children}</div>
     </>
   );
 }
