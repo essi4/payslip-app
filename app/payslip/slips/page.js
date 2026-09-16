@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 const MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 
@@ -17,6 +18,7 @@ function monthOrder(value) {
 export default function EmployeePayslipsPage() {
   const [months, setMonths] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -32,6 +34,7 @@ export default function EmployeePayslipsPage() {
       });
       const data = await response.json();
       if (!response.ok || !data?.success) throw new Error(data?.error || "دریافت فیش‌ها انجام نشد.");
+      setEmployee(data.employee || null);
       const list = Array.isArray(data.months) ? [...data.months] : [];
       list.sort((a, b) => Number(b.year || 0) - Number(a.year || 0) || monthOrder(b.month) - monthOrder(a.month));
       setMonths(list);
@@ -53,7 +56,7 @@ export default function EmployeePayslipsPage() {
       });
       const data = await response.json();
       if (!response.ok || !data?.success) throw new Error(data?.error || "فیش قابل نمایش نیست.");
-      setSelected(data.payslip);
+      setSelected(data.data?.[0] || data.payslip || null);
     } catch (err) {
       setError(err.message || "خطا در دریافت فیش.");
     }
@@ -103,7 +106,31 @@ export default function EmployeePayslipsPage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-5 rounded-[26px] bg-white p-5 shadow-sm">
           <div className="text-xs font-bold text-blue-700">پنل پرسنلی</div>
-          <h1 className="mt-1 text-2xl font-black">فیش‌های حقوقی من</h1>
+          <h1 className="mt-1 text-2xl font-black">خوش آمدید، {employee?.full_name || "کاربر گرامی"}</h1>
+          <p className="mt-1 text-xs font-bold text-blue-700">شرکت: {employee?.company_name || "شرکت ثبت نشده"}</p>
+        </div>
+
+        <section className="mb-6 grid gap-3 sm:grid-cols-3">
+          <Link href="/payslip/slips" className="rounded-2xl border border-blue-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+            <div className="text-2xl">📄</div>
+            <div className="mt-3 text-sm font-black text-slate-900">فیش‌های حقوقی من</div>
+            <div className="mt-1 text-[10px] font-bold text-slate-500">مشاهده و چاپ فیش‌های حقوقی</div>
+          </Link>
+          <Link href="/payslip/order" className="rounded-2xl border border-violet-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+            <div className="text-2xl">📝</div>
+            <div className="mt-3 text-sm font-black text-slate-900">حکم کارگزینی</div>
+            <div className="mt-1 text-[10px] font-bold text-slate-500">مشاهده اطلاعات حکم و مشخصات شغلی</div>
+          </Link>
+          <Link href="/payslip/account" className="rounded-2xl border border-emerald-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+            <div className="text-2xl">👤</div>
+            <div className="mt-3 text-sm font-black text-slate-900">حساب من</div>
+            <div className="mt-1 text-[10px] font-bold text-slate-500">مشاهده اطلاعات حساب و مشخصات پرسنلی</div>
+          </Link>
+        </section>
+
+        <div className="mb-5 rounded-[26px] bg-white p-5 shadow-sm">
+          <div className="text-xs font-bold text-blue-700">فیش‌های حقوقی</div>
+          <h2 className="mt-1 text-xl font-black">فیش‌های حقوقی من</h2>
           <p className="mt-1 text-xs font-bold text-slate-500">فیش‌ها از جدیدترین دوره مرتب شده‌اند.</p>
         </div>
         {error && <div className="mb-4 rounded-2xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}
