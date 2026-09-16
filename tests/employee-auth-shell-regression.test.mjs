@@ -4,8 +4,12 @@ import fs from "node:fs";
 const shell = fs.readFileSync("app/payslip/EmployeeAuthenticatedShell.js", "utf8");
 const page = fs.readFileSync("app/payslip/page.js", "utf8");
 
-assert.match(shell, /return children;/, "root employee route must be able to return the login page");
-assert.doesNotMatch(page, /setMode\(\"dashboard\"\)/, "first page must not switch into an authenticated dashboard");
+const rootGuardIndex = shell.indexOf('if (normalizedPathname === "/payslip") return children;');
+const authChromeIndex = shell.indexOf("function AuthenticatedEmployeeChrome");
+assert.ok(rootGuardIndex >= 0, "root employee route must have an explicit login-only guard");
+assert.ok(authChromeIndex >= 0, "authenticated employee chrome must be isolated from the root login page");
+assert.ok(rootGuardIndex < authChromeIndex, "root login guard must run before authenticated employee chrome is mounted");
+assert.doesNotMatch(page, /setMode\("dashboard"\)/, "first page must not switch into an authenticated dashboard");
 assert.doesNotMatch(page, /SimpleCard/, "first page must not contain dashboard cards");
 assert.doesNotMatch(page, /PayslipDocument/, "first page must not contain payslip document UI");
 assert.match(page, /سامانه کارکنان/);
