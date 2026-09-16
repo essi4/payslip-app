@@ -1,97 +1,166 @@
 "use client";
 
 import { useState } from "react";
-
-const MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
-const EN_MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-
-function money(value) { return Number(value || 0).toLocaleString("fa-IR") + " تومان"; }
-function dash(value) { return value === null || value === undefined || value === "" ? "—" : String(value); }
-function monthOrder(value) { const t = String(value ?? "").trim().toLowerCase(); const n = Number(t); if (Number.isFinite(n) && n >= 1 && n <= 12) return n; const f = MONTHS.indexOf(t); if (f >= 0) return f + 1; const e = EN_MONTHS.indexOf(t); return e >= 0 ? e + 1 : 0; }
-function yearOrder(value) { const n = Number(String(value ?? "").replace(/[^0-9]/g, "")); return Number.isFinite(n) ? n : 0; }
-function period(item) { return dash(item.month) + " " + dash(item.year); }
+import { useRouter } from "next/navigation";
 
 function Login({ nationalId, setNationalId, password, setPassword, onLogin, onForgot, loading, error }) {
-  return <main dir="rtl" className="min-h-screen bg-[#07111f] px-4 py-6 text-slate-900 sm:px-6 sm:py-10">
-    <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center justify-center">
-      <section className="w-full overflow-hidden rounded-[30px] bg-white shadow-2xl">
-        <div className="bg-gradient-to-br from-[#07111f] via-[#0b2850] to-[#1464c4] px-6 pb-8 pt-9 text-white">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl ring-1 ring-white/20">💼</div>
-          <div className="mt-5 text-center"><div className="text-xs font-bold text-blue-200">سامانه کارکنان</div><h1 className="mt-1 text-2xl font-black">سیستم حقوق و دستمزد</h1><p className="mt-2 text-xs text-slate-300">فیش حقوقی و خدمات پرسنلی</p></div>
-        </div>
-        <div className="p-5 sm:p-7">
-          <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center"><div className="text-sm font-black">ورود به حساب کاربری</div><div className="mt-1 text-[10px] font-bold text-slate-500">کد ملی و رمز عبور خود را وارد کنید</div></div>
-          <div className="space-y-3">
-            <label className="block"><span className="mb-1.5 block text-xs font-black">کد ملی</span><input dir="ltr" inputMode="numeric" value={nationalId} onChange={e=>setNationalId(e.target.value)} onKeyDown={e=>e.key === "Enter" && onLogin()} placeholder="مثلاً 0012345678" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" /></label>
-            <label className="block"><span className="mb-1.5 block text-xs font-black">رمز عبور</span><input dir="ltr" type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key === "Enter" && onLogin()} placeholder="رمز عبور" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" /></label>
-            {error && <div className="rounded-2xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}
-            <button onClick={onLogin} disabled={loading} className="w-full rounded-2xl bg-blue-700 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-700/20 disabled:opacity-60">{loading ? "در حال ورود..." : "ورود به پنل پرسنلی ←"}</button>
-            <button onClick={onForgot} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-black text-slate-600">فراموشی رمز عبور</button>
+  return (
+    <main dir="rtl" className="min-h-screen bg-[#07111f] px-4 py-6 text-slate-900 sm:px-6 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center justify-center">
+        <section className="w-full overflow-hidden rounded-[30px] bg-white shadow-2xl">
+          <div className="bg-gradient-to-br from-[#07111f] via-[#0b2850] to-[#1464c4] px-6 pb-8 pt-9 text-white">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl ring-1 ring-white/20">💼</div>
+            <div className="mt-5 text-center">
+              <div className="text-xs font-bold text-blue-200">سامانه کارکنان</div>
+              <h1 className="mt-1 text-2xl font-black">سیستم حقوق و دستمزد</h1>
+              <p className="mt-2 text-xs text-slate-300">فیش حقوقی و خدمات پرسنلی</p>
+            </div>
           </div>
-          <div className="mt-6 text-center text-[10px] font-bold text-slate-400">🔒 اطلاعات حساب شما محرمانه است</div>
-        </div>
-      </section>
-    </div>
-  </main>;
+          <div className="p-5 sm:p-7">
+            <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center">
+              <div className="text-sm font-black">ورود به حساب کاربری</div>
+              <div className="mt-1 text-[10px] font-bold text-slate-500">کد ملی و رمز عبور خود را وارد کنید</div>
+            </div>
+            <div className="space-y-3">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-black">کد ملی</span>
+                <input dir="ltr" inputMode="numeric" value={nationalId} onChange={(e) => setNationalId(e.target.value)} onKeyDown={(e) => e.key === "Enter" && onLogin()} placeholder="مثلاً 0012345678" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-black">رمز عبور</span>
+                <input dir="ltr" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && onLogin()} placeholder="رمز عبور" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+              </label>
+              {error && <div className="rounded-2xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}
+              <button onClick={onLogin} disabled={loading} className="w-full rounded-2xl bg-blue-700 px-4 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-700/20 disabled:opacity-60">{loading ? "در حال ورود..." : "ورود به پنل پرسنلی ←"}</button>
+              <button onClick={onForgot} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-black text-slate-600">فراموشی رمز عبور</button>
+            </div>
+            <div className="mt-6 text-center text-[10px] font-bold text-slate-400">🔒 اطلاعات حساب شما محرمانه است</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
-function SimpleCard({ icon, title, text, tone, onClick }) {
-  const tones = { blue: "border-blue-100 bg-gradient-to-br from-blue-50 to-white text-blue-700", violet: "border-violet-100 bg-gradient-to-br from-violet-50 to-white text-violet-700", emerald: "border-emerald-100 bg-gradient-to-br from-emerald-50 to-white text-emerald-700" };
-  return <button onClick={onClick} className={`group min-h-[165px] rounded-[26px] border p-5 text-right shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl ${tones[tone]}`}>
-    <div className="flex items-start justify-between"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm ring-1 ring-black/5">{icon}</div><span className="rounded-full bg-white/80 px-3 py-1 text-[9px] font-black">مشاهده ←</span></div>
-    <div className="mt-6 text-lg font-black text-slate-950">{title}</div><div className="mt-1 text-[10px] font-bold leading-5 text-slate-500">{text}</div>
-  </button>;
+function RecoveryStart({ nationalId, setNationalId, personnelCode, setPersonnelCode, onSubmit, onBack, loading, error }) {
+  return (
+    <main dir="rtl" className="min-h-screen bg-[#07111f] px-4 py-6 text-slate-900 sm:px-6 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center justify-center">
+        <section className="w-full rounded-[30px] bg-white p-5 shadow-2xl sm:p-7">
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center">
+            <div className="text-sm font-black">بازیابی رمز عبور</div>
+            <div className="mt-1 text-[10px] font-bold text-slate-500">کد ملی و کد پرسنلی را وارد کنید</div>
+          </div>
+          <div className="mt-5 space-y-3">
+            <input dir="ltr" inputMode="numeric" value={nationalId} onChange={(e) => setNationalId(e.target.value)} placeholder="کد ملی" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+            <input dir="ltr" inputMode="numeric" value={personnelCode} onChange={(e) => setPersonnelCode(e.target.value)} placeholder="کد پرسنلی" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+            {error && <div className="rounded-2xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}
+            <button onClick={onSubmit} disabled={loading} className="w-full rounded-2xl bg-blue-700 px-4 py-3.5 text-sm font-black text-white disabled:opacity-60">{loading ? "در حال بررسی..." : "دریافت کد بازیابی"}</button>
+            <button onClick={onBack} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-black text-slate-600">بازگشت به ورود</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
-function Field({ label, value }) { return <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3"><div className="text-[9px] font-bold text-slate-400">{label}</div><div className="mt-1 truncate text-xs font-black text-slate-800">{dash(value)}</div></div>; }
-
-function PayslipDocument({ payslip, onBack, onPrint }) {
-  const benefits = Number(payslip.housing_allowance||0)+Number(payslip.food_allowance||0)+Number(payslip.marriage_allowance||0)+Number(payslip.child_allowance||0)+Number(payslip.other_benefits||0);
-  const income = Number(payslip.base_salary||0)+Number(payslip.overtime||0)+Number(payslip.bonus||0)+benefits;
-  const deductions = Number(payslip.insurance||0)+Number(payslip.tax||0)+Number(payslip.other_deductions||0);
-  const Row=({label,value})=><div className="flex justify-between border-b border-slate-100 px-3 py-2 text-xs"><span className="font-bold text-slate-600">{label}</span><span className="font-black">{money(value)}</span></div>;
-  return <main dir="rtl" className="min-h-screen bg-slate-100 px-3 py-5"><div className="mx-auto max-w-4xl rounded-[26px] bg-white shadow-xl"><div className="rounded-t-[26px] bg-gradient-to-l from-slate-950 to-blue-900 p-5 text-white"><div className="text-center text-xl font-black">فیش حقوق و دستمزد</div><div className="mt-1 text-center text-xs text-blue-200">{period(payslip)}</div></div><div className="p-4 sm:p-6"><div className="grid grid-cols-2 gap-2 sm:grid-cols-3"><Field label="نام و نام خانوادگی" value={payslip.full_name}/><Field label="کد ملی" value={payslip.national_id}/><Field label="کد پرسنلی" value={payslip.personnel_code}/><Field label="عنوان شغلی" value={payslip.job_title || payslip.employee_job_title}/><Field label="گروه مزدی" value={payslip.job_group}/><Field label="واحد سازمانی" value={payslip.department}/></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><div className="overflow-hidden rounded-2xl border border-emerald-100"><div className="bg-emerald-700 p-3 text-center text-xs font-black text-white">مزایا و دریافت‌ها</div><Row label="حقوق پایه" value={payslip.base_salary}/><Row label="اضافه‌کاری" value={payslip.overtime}/><Row label="حق مسکن" value={payslip.housing_allowance}/><Row label="بن خواربار" value={payslip.food_allowance}/><Row label="حق تأهل" value={payslip.marriage_allowance}/><div className="bg-emerald-50 p-3 text-xs font-black text-emerald-800">جمع دریافت‌ها: {money(income)}</div></div><div className="overflow-hidden rounded-2xl border border-red-100"><div className="bg-red-700 p-3 text-center text-xs font-black text-white">کسورات</div><Row label="بیمه" value={payslip.insurance}/><Row label="مالیات" value={payslip.tax}/><Row label="سایر کسورات" value={payslip.other_deductions}/><div className="bg-red-50 p-3 text-xs font-black text-red-800">جمع کسورات: {money(deductions)}</div></div></div><div className="mt-5 rounded-2xl bg-gradient-to-l from-blue-950 to-slate-900 p-5 text-center text-white"><div className="text-xs text-blue-200">خالص پرداختی</div><div className="mt-1 text-3xl font-black">{money(payslip.net_salary)}</div></div><div className="mt-5 flex gap-2"><button onClick={onBack} className="flex-1 rounded-xl border px-4 py-3 text-xs font-black">← بازگشت</button><button onClick={()=>onPrint(payslip.id)} className="flex-1 rounded-xl bg-blue-700 px-4 py-3 text-xs font-black text-white">🖨 چاپ فیش</button></div></div></div></main>;
+function RecoveryVerify({ recoveryCode, setRecoveryCode, newPassword, setNewPassword, confirmPassword, setConfirmPassword, serverRecoveryCode, onSubmit, onBack, loading, error, success }) {
+  return (
+    <main dir="rtl" className="min-h-screen bg-[#07111f] px-4 py-6 text-slate-900 sm:px-6 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center justify-center">
+        <section className="w-full rounded-[30px] bg-white p-5 shadow-2xl sm:p-7">
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center"><div className="text-sm font-black">تغییر رمز عبور</div><div className="mt-1 text-[10px] font-bold text-slate-500">کد بازیابی و رمز جدید را وارد کنید</div></div>
+          {serverRecoveryCode && <div className="mt-4 rounded-2xl bg-amber-50 p-3 text-center text-sm font-black text-amber-800">کد بازیابی: {serverRecoveryCode}</div>}
+          <div className="mt-4 space-y-3">
+            <input dir="ltr" value={recoveryCode} onChange={(e) => setRecoveryCode(e.target.value)} placeholder="کد بازیابی" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+            <input dir="ltr" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="رمز عبور جدید" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+            <input dir="ltr" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="تکرار رمز عبور جدید" className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3.5 text-center text-sm font-black outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100" />
+            {error && <div className="rounded-2xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}
+            {success && <div className="rounded-2xl bg-emerald-50 p-3 text-center text-xs font-bold text-emerald-700">{success}</div>}
+            <button onClick={onSubmit} disabled={loading} className="w-full rounded-2xl bg-blue-700 px-4 py-3.5 text-sm font-black text-white disabled:opacity-60">{loading ? "در حال تغییر..." : "تغییر رمز عبور"}</button>
+            <button onClick={onBack} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-black text-slate-600">بازگشت به ورود</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
 export default function PayslipPage() {
-  const [mode,setMode]=useState("login"); const [nationalId,setNationalId]=useState(""); const [password,setPassword]=useState(""); const [personnelCode,setPersonnelCode]=useState(""); const [recoveryCode,setRecoveryCode]=useState(""); const [serverRecoveryCode,setServerRecoveryCode]=useState(""); const [newPassword,setNewPassword]=useState(""); const [confirmPassword,setConfirmPassword]=useState(""); const [employee,setEmployee]=useState(null); const [months,setMonths]=useState([]); const [selectedPayslip,setSelectedPayslip]=useState(null); const [view,setView]=useState("home"); const [selectedYear,setSelectedYear]=useState(""); const [selectedMonth,setSelectedMonth]=useState(""); const [loading,setLoading]=useState(false); const [error,setError]=useState(""); const [success,setSuccess]=useState("");
+  const router = useRouter();
+  const [mode, setMode] = useState("login");
+  const [nationalId, setNationalId] = useState("");
+  const [password, setPassword] = useState("");
+  const [personnelCode, setPersonnelCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [serverRecoveryCode, setServerRecoveryCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  async function login(){setError("");setLoading(true);const id=nationalId.replace(/[^0-9]/g,"");if(id.length!==10){setError("کد ملی باید ۱۰ رقمی باشد.");setLoading(false);return;}if(!password.trim()){setError("رمز عبور را وارد کنید.");setLoading(false);return;}try{const r=await fetch("/api/payslip",{method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",body:JSON.stringify({national_id:id,password})});const x=await r.json();if(!r.ok||!x.success){setError(x.error||"کد ملی یا رمز عبور اشتباه است.");return;}const list=Array.isArray(x.months)?x.months:[];list.sort((a,b)=>yearOrder(b.year)-yearOrder(a.year)||monthOrder(b.month)-monthOrder(a.month));setEmployee(x.employee);setMonths(list);setSelectedYear(list.length?String(list[0].year??""):"");setMode("dashboard");}catch(e){setError("خطا در اتصال به سرور.");}finally{setLoading(false);}}
-  async function requestRecovery(){setError("");setSuccess("");setLoading(true);const id=nationalId.replace(/[^0-9]/g,"");if(id.length!==10){setError("کد ملی باید ۱۰ رقمی باشد.");setLoading(false);return;}if(!personnelCode.trim()){setError("کد پرسنلی را وارد کنید.");setLoading(false);return;}try{const r=await fetch("/api/payslip/forgot-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({national_id:id,personnel_code:personnelCode.trim()})});const x=await r.json();if(!r.ok||!x.success){setError(x.error||"اطلاعات واردشده صحیح نیست.");return;}if(x.recovery_code)setServerRecoveryCode(String(x.recovery_code));setSuccess(x.message||"کد بازیابی ایجاد شد.");setMode("verify");}catch(e){setError("خطا در ارتباط با سرور.");}finally{setLoading(false);}}
-  async function resetPassword(){setError("");setLoading(true);if(!recoveryCode.trim()||!newPassword.trim()||newPassword.length<4||newPassword!==confirmPassword){setError("اطلاعات رمز عبور را کامل و صحیح وارد کنید.");setLoading(false);return;}try{const r=await fetch("/api/payslip/reset-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({national_id:nationalId.replace(/[^0-9]/g,""),recovery_code:recoveryCode.trim(),new_password:newPassword,confirm_password:confirmPassword})});const x=await r.json();if(!r.ok||!x.success){setError(x.error||"تغییر رمز انجام نشد.");return;}setSuccess(x.message||"رمز عبور تغییر کرد.");setTimeout(()=>setMode("login"),1000);}catch(e){setError("خطا در ارتباط با سرور.");}finally{setLoading(false);}}
-  async function loadPayslip(item){setError("");setLoading(true);try{const r=await fetch("/api/payslip",{method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",body:JSON.stringify({month:item.month,year:item.year})});const x=await r.json();if(!r.ok||!x.success){setError(x.error||"فیش قابل نمایش نیست.");return;}setSelectedPayslip(x.payslip);}catch(e){setError("خطا در دریافت فیش.");}finally{setLoading(false);}}
-  function logout(){fetch("/api/payslip/logout",{method:"POST"}).catch(()=>{});window.location.reload();}
-  function print(){const t=document.title;document.title="فیش حقوقی";window.print();document.title=t;}
+  async function login() {
+    setError("");
+    setLoading(true);
+    const id = nationalId.replace(/[^0-9]/g, "");
+    if (id.length !== 10) { setError("کد ملی باید ۱۰ رقمی باشد."); setLoading(false); return; }
+    if (!password.trim()) { setError("رمز عبور را وارد کنید."); setLoading(false); return; }
+    try {
+      const response = await fetch("/api/payslip", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ national_id: id, password }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) { setError(data.error || "کد ملی یا رمز عبور اشتباه است."); return; }
+      router.replace("/payslip/slips");
+    } catch {
+      setError("خطا در اتصال به سرور.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  if(mode==="login")return <Login nationalId={nationalId} setNationalId={setNationalId} password={password} setPassword={setPassword} onLogin={login} onForgot={()=>{setError("");setMode("forgot")}} loading={loading} error={error}/>;
-  if(mode==="forgot")return <main dir="rtl" className="min-h-screen bg-slate-100 p-4"><div className="mx-auto mt-16 max-w-md rounded-3xl bg-white p-6 shadow-xl"><div className="text-center"><div className="text-3xl">🔐</div><h1 className="mt-2 text-xl font-black">بازیابی رمز عبور</h1></div><div className="mt-5 space-y-3"><input value={nationalId} onChange={e=>setNationalId(e.target.value)} placeholder="کد ملی" className="w-full rounded-xl border p-3 text-center"/><input value={personnelCode} onChange={e=>setPersonnelCode(e.target.value)} placeholder="کد پرسنلی" className="w-full rounded-xl border p-3 text-center"/>{error&&<div className="rounded-xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}<button onClick={requestRecovery} className="w-full rounded-xl bg-blue-700 p-3 text-xs font-black text-white">دریافت کد بازیابی</button><button onClick={()=>setMode("login")} className="w-full rounded-xl border p-3 text-xs font-black">بازگشت</button></div></div></main>;
-  if(mode==="verify")return <main dir="rtl" className="min-h-screen bg-slate-100 p-4"><div className="mx-auto mt-16 max-w-md rounded-3xl bg-white p-6 shadow-xl"><div className="text-center"><div className="text-3xl">🔑</div><h1 className="mt-2 text-xl font-black">تغییر رمز عبور</h1>{serverRecoveryCode&&<div className="mt-3 rounded-xl bg-amber-50 p-3 text-xs font-black">کد بازیابی: {serverRecoveryCode}</div>}</div><div className="mt-5 space-y-3"><input value={recoveryCode} onChange={e=>setRecoveryCode(e.target.value)} placeholder="کد بازیابی" className="w-full rounded-xl border p-3 text-center"/><input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="رمز جدید" className="w-full rounded-xl border p-3 text-center"/><input type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="تکرار رمز جدید" className="w-full rounded-xl border p-3 text-center"/>{error&&<div className="rounded-xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}{success&&<div className="rounded-xl bg-emerald-50 p-3 text-center text-xs font-bold text-emerald-700">{success}</div>}<button onClick={resetPassword} className="w-full rounded-xl bg-blue-700 p-3 text-xs font-black text-white">ذخیره رمز جدید</button><button onClick={()=>setMode("login")} className="w-full rounded-xl border p-3 text-xs font-black">بازگشت</button></div></div></main>;
+  async function requestRecovery() {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    const id = nationalId.replace(/[^0-9]/g, "");
+    if (id.length !== 10) { setError("کد ملی باید ۱۰ رقمی باشد."); setLoading(false); return; }
+    if (!personnelCode.trim()) { setError("کد پرسنلی را وارد کنید."); setLoading(false); return; }
+    try {
+      const response = await fetch("/api/payslip/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ national_id: id, personnel_code: personnelCode.trim() }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) { setError(data.error || "اطلاعات واردشده صحیح نیست."); return; }
+      if (data.recovery_code) setServerRecoveryCode(String(data.recovery_code));
+      setSuccess(data.message || "کد بازیابی ایجاد شد.");
+      setMode("verify");
+    } catch {
+      setError("خطا در ارتباط با سرور.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  if(selectedPayslip)return <PayslipDocument payslip={selectedPayslip} onBack={()=>setSelectedPayslip(null)} onPrint={print}/>;
+  async function resetPassword() {
+    setError("");
+    setLoading(true);
+    if (!recoveryCode.trim() || !newPassword.trim() || newPassword.length < 8 || newPassword !== confirmPassword) {
+      setError("رمز جدید باید حداقل ۸ کاراکتر باشد و با تکرار آن یکسان باشد.");
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch("/api/payslip/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ national_id: nationalId.replace(/[^0-9]/g, ""), personnel_code: personnelCode.trim(), recovery_code: recoveryCode.trim(), new_password: newPassword, confirm_password: confirmPassword }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) { setError(data.error || "تغییر رمز انجام نشد."); return; }
+      setSuccess(data.message || "رمز عبور تغییر کرد.");
+      setTimeout(() => setMode("login"), 1000);
+    } catch {
+      setError("خطا در ارتباط با سرور.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const years=[...new Set(months.map(x=>String(x.year??"")))].filter(Boolean).sort((a,b)=>yearOrder(b)-yearOrder(a));
-  const filtered=months.filter(x=>(!selectedYear||String(x.year??"")===selectedYear)&&(!selectedMonth||String(x.month??"")===selectedMonth));
-  const initials=String(employee?.full_name||"ک").trim().charAt(0);
-
-  return <main dir="rtl" className="min-h-screen bg-[#f4f7fb] px-3 py-4 sm:px-5 sm:py-6"><div className="mx-auto max-w-5xl">
-    <header className="overflow-hidden rounded-[28px] bg-gradient-to-l from-[#07111f] via-[#0b2850] to-[#1464c4] p-5 text-white shadow-xl sm:p-7"><div className="flex items-center justify-between gap-4"><div><div className="text-[10px] font-bold text-blue-200">سامانه فیش حقوقی کارکنان</div><h1 className="mt-1 text-xl font-black sm:text-2xl">پنل پرسنلی</h1><p className="mt-1 text-[10px] text-slate-300">خدمات و اطلاعات شغلی شما</p></div><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-lg font-black ring-1 ring-white/15">{initials}</div><div className="hidden sm:block"><div className="text-sm font-black">{employee?.full_name}</div><div className="text-[10px] text-slate-300">کد پرسنلی: {employee?.personnel_code||"—"}</div></div><button onClick={logout} className="rounded-xl bg-white/10 px-3 py-2 text-[10px] font-black ring-1 ring-white/10">خروج</button></div></div></header>
-
-    {view==="home" && <>
-      <section className="mt-5 grid gap-3 sm:grid-cols-3">
-        <SimpleCard icon="📄" title="فیش حقوقی" text={`${months.length.toLocaleString("fa-IR")} فیش ثبت شده · مشاهده و چاپ`} tone="blue" onClick={()=>document.getElementById("payslips")?.scrollIntoView({behavior:"smooth",block:"start"})}/>
-        <SimpleCard icon="📋" title="حکم کارگزینی" text="مشاهده اطلاعات حکم و مشخصات شغلی" tone="violet" onClick={()=>setView("order")}/>
-        <SimpleCard icon="👤" title="مشخصات من" text="اطلاعات هویتی، شغلی و سازمانی" tone="emerald" onClick={()=>setView("profile")}/>
-      </section>
-
-      <section className="mt-5 rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><div className="flex items-center justify-between"><div><div className="text-[10px] font-bold text-blue-600">آخرین وضعیت</div><h2 className="mt-1 text-lg font-black">خلاصه حساب پرسنلی</h2></div><div className="rounded-2xl bg-slate-50 px-4 py-3 text-center"><div className="text-[9px] text-slate-400">آخرین دوره</div><div className="mt-1 text-xs font-black">{months.length?period(months[0]):"ثبت نشده"}</div></div></div></section>
-
-      <section id="payslips" className="mt-4 rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-lg font-black">فیش‌های حقوقی من</h2><p className="mt-1 text-[10px] font-bold text-slate-400">فیش‌ها از جدیدترین دوره مرتب شده‌اند.</p></div><span className="rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-black text-blue-700">{filtered.length.toLocaleString("fa-IR")} فیش</span></div><div className="mb-4 grid gap-2 sm:grid-cols-2"><select value={selectedYear} onChange={e=>{setSelectedYear(e.target.value);setSelectedMonth("")}} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-black"><option value="">همه سال‌ها</option>{years.map(y=><option key={y}>{y}</option>)}</select><select value={selectedMonth} onChange={e=>setSelectedMonth(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-black"><option value="">همه ماه‌ها</option>{MONTHS.map(m=><option key={m}>{m}</option>)}</select></div>{filtered.length?<div className="grid gap-3 sm:grid-cols-2">{filtered.map(item=><button key={String(item.year)+"-"+String(item.month)} onClick={()=>loadPayslip(item)} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-right transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50"><div className="flex items-center justify-between"><div><div className="text-[9px] font-bold text-slate-400">دوره حقوق</div><div className="mt-1 text-base font-black">{period(item)}</div></div><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl shadow-sm">📄</div></div><div className="mt-4 text-[10px] font-black text-blue-700">مشاهده فیش ←</div></button>)}</div>:<div className="rounded-2xl bg-slate-50 py-10 text-center"><div className="text-4xl">📭</div><div className="mt-3 text-sm font-black text-slate-600">فیشی برای این انتخاب پیدا نشد</div></div>}</section>
-    </>}
-
-    {view==="profile" && <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"><button onClick={()=>setView("home")} className="mb-5 rounded-xl border px-4 py-2 text-xs font-black">← بازگشت</button><div className="mb-5 flex items-center gap-4"><div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">👤</div><div><div className="text-xl font-black">مشخصات من</div><div className="mt-1 text-[10px] text-slate-400">اطلاعات ثبت‌شده پرسنلی</div></div></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Field label="نام و نام خانوادگی" value={employee?.full_name}/><Field label="کد ملی" value={employee?.national_id}/><Field label="کد پرسنلی" value={employee?.personnel_code}/><Field label="عنوان شغلی" value={employee?.job_title}/><Field label="گروه مزدی" value={employee?.job_group}/><Field label="واحد سازمانی" value={employee?.department}/><Field label="شرکت" value={employee?.company_name}/><Field label="ایمیل" value={employee?.email}/></div></section>}
-
-    {view==="order" && <section className="mt-5 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"><div className="bg-gradient-to-l from-violet-950 to-violet-700 p-6 text-white"><button onClick={()=>setView("home")} className="rounded-xl bg-white/10 px-4 py-2 text-xs font-black">← بازگشت</button><div className="mt-5 text-center"><div className="text-3xl">📋</div><h2 className="mt-2 text-2xl font-black">حکم کارگزینی</h2><p className="mt-1 text-[10px] text-violet-200">اطلاعات حکم و وضعیت شغلی پرسنل</p></div></div><div className="p-5"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><Field label="نام و نام خانوادگی" value={employee?.full_name}/><Field label="کد پرسنلی" value={employee?.personnel_code}/><Field label="کد ملی" value={employee?.national_id}/><Field label="عنوان شغلی" value={employee?.job_title}/><Field label="گروه مزدی" value={employee?.job_group}/><Field label="واحد سازمانی" value={employee?.department}/><Field label="شرکت" value={employee?.company_name}/></div><div className="mt-5 rounded-2xl border border-dashed border-violet-200 bg-violet-50 p-4 text-center text-xs font-bold text-violet-800">برای نمایش شماره و تاریخ رسمی حکم، اطلاعات حکم باید در پرونده پرسنلی ثبت شده باشد.</div></div></section>}
-
-    <footer className="py-7 text-center text-[10px] font-bold text-slate-400">© سیستم حقوق و دستمزد · حساب پرسنلی</footer>
-  </div></main>;
+  if (mode === "recovery") return <RecoveryStart nationalId={nationalId} setNationalId={setNationalId} personnelCode={personnelCode} setPersonnelCode={setPersonnelCode} onSubmit={requestRecovery} onBack={() => { setError(""); setMode("login"); }} loading={loading} error={error} />;
+  if (mode === "verify") return <RecoveryVerify recoveryCode={recoveryCode} setRecoveryCode={setRecoveryCode} newPassword={newPassword} setNewPassword={setNewPassword} confirmPassword={confirmPassword} setConfirmPassword={setConfirmPassword} serverRecoveryCode={serverRecoveryCode} onSubmit={resetPassword} onBack={() => { setError(""); setMode("login"); }} loading={loading} error={error} success={success} />;
+  return <Login nationalId={nationalId} setNationalId={setNationalId} password={password} setPassword={setPassword} onLogin={login} onForgot={() => { setError(""); setMode("recovery"); }} loading={loading} error={error} />;
 }
