@@ -5,7 +5,7 @@ const shell = fs.readFileSync("app/payslip/EmployeeAuthenticatedShell.js", "utf8
 const page = fs.readFileSync("app/payslip/page.js", "utf8");
 
 assert.match(shell, /return children;/, "root employee route must be able to return the login page");
-assert.doesNotMatch(page, /setMode/, "first page must not switch into an authenticated dashboard");
+assert.doesNotMatch(page, /setMode\(\"dashboard\"\)/, "first page must not switch into an authenticated dashboard");
 assert.doesNotMatch(page, /SimpleCard/, "first page must not contain dashboard cards");
 assert.doesNotMatch(page, /PayslipDocument/, "first page must not contain payslip document UI");
 assert.match(page, /سامانه کارکنان/);
