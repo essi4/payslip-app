@@ -41,15 +41,17 @@ export default function EmployeeAuthenticatedShell({ children }) {
     return () => { active = false; };
   }, []);
 
-  // Never render the login page and authenticated UI together while the session is resolving.
   if (!checked) return null;
   if (!authenticated) return children;
 
-  const isHome = normalizedPathname === "/payslip";
+  // The root employee URL is intentionally the login landing page only.
+  // Authenticated employees are sent to the dedicated slips page by the login action.
+  if (normalizedPathname === "/payslip") return children;
+
   return (
     <>
       <CompanyWelcomeBanner employee={employee} />
-      {isHome ? <EmployeeDashboardHome employee={employee} payslipCount={months.length} /> : <div className="pt-20 sm:pt-24">{children}</div>}
+      <div className="pt-20 sm:pt-24">{children}</div>
       <EmployeeBottomNav />
     </>
   );
