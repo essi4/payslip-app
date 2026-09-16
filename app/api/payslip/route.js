@@ -20,7 +20,7 @@ function rateLimitedResponse(retryAfterSeconds) {
 
 const EMPLOYEE_SELECT = `
   SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.department, p.job_title,
-         p.company_id, c.name AS company_name
+         p.company_id, c.name AS company_name, p.payslip_password
   FROM personnel p
   LEFT JOIN companies c ON c.id = p.company_id
 `;
@@ -60,7 +60,7 @@ export async function POST(request) {
       }
 
       employeeResult = await pool.query(
-        `${EMPLOYEE_SELECT}, p.payslip_password WHERE p.national_id = $1 LIMIT 1`,
+        `${EMPLOYEE_SELECT} WHERE p.national_id = $1 LIMIT 1`,
         [nationalId]
       );
       if (!employeeResult.rows.length) {
