@@ -4,15 +4,23 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import CompanyWelcomeBanner from "./CompanyWelcomeBanner";
 import EmployeeBottomNav from "./EmployeeBottomNav";
-import EmployeeDashboardHome from "./EmployeeDashboardHome";
 
 export default function EmployeeAuthenticatedShell({ children }) {
   const pathname = usePathname();
   const normalizedPathname = pathname?.replace(/\/+$/g, "") || "";
+
+  // The root employee URL is always the login landing page. Keep it completely
+  // outside the authenticated shell so an existing session can never add the
+  // welcome banner or bottom navigation to the first screen.
+  if (normalizedPathname === "/payslip") return children;
+
+  return <AuthenticatedEmployeeChrome>{children}</AuthenticatedEmployeeChrome>;
+}
+
+function AuthenticatedEmployeeChrome({ children }) {
   const [authenticated, setAuthenticated] = useState(false);
   const [checked, setChecked] = useState(false);
   const [employee, setEmployee] = useState(null);
-  const [months, setMonths] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -28,14 +36,12 @@ export default function EmployeeAuthenticatedShell({ children }) {
         const loggedIn = Boolean(data?.success && data?.employee);
         setAuthenticated(loggedIn);
         setEmployee(loggedIn ? data.employee : null);
-        setMonths(loggedIn && Array.isArray(data.months) ? data.months : []);
         setChecked(true);
       })
       .catch(() => {
         if (!active) return;
         setAuthenticated(false);
         setEmployee(null);
-        setMonths([]);
         setChecked(true);
       });
     return () => { active = false; };
@@ -43,10 +49,6 @@ export default function EmployeeAuthenticatedShell({ children }) {
 
   if (!checked) return null;
   if (!authenticated) return children;
-
-  // Root /payslip is permanently login-only, even when an employee session exists.
-  // Authenticated employees use /payslip/slips, /payslip/order, and /payslip/account.
-  if (normalizedPathname === "/payslip") return children;
 
   return (
     <>
