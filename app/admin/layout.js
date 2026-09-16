@@ -9,6 +9,7 @@ export default function AdminLayout({ children }) {
   const menuItems = [
     { title: "داشبورد", href: "/admin", icon: "▦" },
     { title: "کارکنان", href: "/admin/employees", icon: "👥" },
+    { title: "صدور حکم کارگزینی", href: "/admin/employees/order-document", icon: "📋" },
     { title: "شرکت‌ها", href: "/admin/companies", icon: "🏢" },
     { title: "دوره‌های حقوق", href: "/admin/payroll-periods", icon: "📅" },
     { title: "فیش‌های حقوقی", href: "/admin/payslips", icon: "📄" },
