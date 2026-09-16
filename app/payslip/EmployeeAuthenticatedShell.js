@@ -8,6 +8,7 @@ import EmployeeDashboardHome from "./EmployeeDashboardHome";
 
 export default function EmployeeAuthenticatedShell({ children }) {
   const pathname = usePathname();
+  const normalizedPathname = pathname?.replace(/\/+$/g, "") || "";
   const [authenticated, setAuthenticated] = useState(false);
   const [checked, setChecked] = useState(false);
   const [employee, setEmployee] = useState(null);
@@ -44,7 +45,7 @@ export default function EmployeeAuthenticatedShell({ children }) {
   if (!checked) return null;
   if (!authenticated) return children;
 
-  const isHome = pathname === "/payslip";
+  const isHome = normalizedPathname === "/payslip";
   return (
     <>
       <CompanyWelcomeBanner employee={employee} />
