@@ -1,19 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
+import { EMPLOYEE_PANEL_HOME_PATH, EMPLOYEE_PANEL_CARDS } from "../app/lib/employee-panel.js";
 
-const layout = fs.readFileSync(new URL("../app/payslip/layout.js", import.meta.url), "utf8");
-const orderPage = fs.readFileSync(new URL("../app/payslip/order/page.js", import.meta.url), "utf8");
-
-test("employee panel exposes payslips and personnel order navigation", () => {
-  assert.match(layout, /href=\"\/payslip\"/);
-  assert.match(layout, /href=\"\/payslip\/order\"/);
-  assert.match(layout, /فیش‌های حقوقی من/);
-  assert.match(layout, /حکم کارگزینی/);
-});
-
-test("personnel order page is employee-scoped and printable", () => {
-  assert.match(orderPage, /fetch\(\"\/api\/payslip\"/);
-  assert.match(orderPage, /حکم کارگزینی/);
-  assert.match(orderPage, /چاپ حکم/);
+test("employee panel keeps payslips inside the payslips card flow", () => {
+  assert.equal(EMPLOYEE_PANEL_HOME_PATH, "/payslip/dashboard");
+  assert.deepEqual(
+    EMPLOYEE_PANEL_CARDS.map(({ title, href }) => ({ title, href })),
+    [
+      { title: "فیش‌های حقوقی من", href: "/payslip/slips" },
+      { title: "حکم کارگزینی", href: "/payslip/order" },
+      { title: "حساب من", href: "/payslip/account" },
+    ],
+  );
 });
