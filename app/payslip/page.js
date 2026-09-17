@@ -110,7 +110,7 @@ export default function PayslipPage() {
       const response = await fetch("/api/payslip", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ national_id: id, password }) });
       const data = await response.json();
       if (!response.ok || !data.success) { setError(data.error || "کد ملی یا رمز عبور اشتباه است."); return; }
-      router.replace("/payslip/slips");
+      router.replace("/payslip/dashboard");
     } catch {
       setError("خطا در اتصال به سرور.");
     } finally {

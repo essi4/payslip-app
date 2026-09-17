@@ -105,33 +105,14 @@ export default function EmployeePayslipsPage() {
     <main dir="rtl" className="min-h-screen bg-slate-50 px-4 pb-28 pt-28 sm:px-6">
       <div className="mx-auto max-w-4xl">
         <div className="mb-5 rounded-[26px] bg-white p-5 shadow-sm">
-          <div className="text-xs font-bold text-blue-700">پنل پرسنلی</div>
-          <h1 className="mt-1 text-2xl font-black">خوش آمدید، {employee?.full_name || "کاربر گرامی"}</h1>
-          <p className="mt-1 text-xs font-bold text-blue-700">شرکت: {employee?.company_name || "شرکت ثبت نشده"}</p>
-        </div>
-
-        <section className="mb-6 grid gap-3 sm:grid-cols-3">
-          <Link href="/payslip/slips" className="rounded-2xl border border-blue-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-            <div className="text-2xl">📄</div>
-            <div className="mt-3 text-sm font-black text-slate-900">فیش‌های حقوقی من</div>
-            <div className="mt-1 text-[10px] font-bold text-slate-500">مشاهده و چاپ فیش‌های حقوقی</div>
-          </Link>
-          <Link href="/payslip/order" className="rounded-2xl border border-violet-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-            <div className="text-2xl">📝</div>
-            <div className="mt-3 text-sm font-black text-slate-900">حکم کارگزینی</div>
-            <div className="mt-1 text-[10px] font-bold text-slate-500">مشاهده اطلاعات حکم و مشخصات شغلی</div>
-          </Link>
-          <Link href="/payslip/account" className="rounded-2xl border border-emerald-100 bg-white p-4 text-right shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-            <div className="text-2xl">👤</div>
-            <div className="mt-3 text-sm font-black text-slate-900">حساب من</div>
-            <div className="mt-1 text-[10px] font-bold text-slate-500">مشاهده اطلاعات حساب و مشخصات پرسنلی</div>
-          </Link>
-        </section>
-
-        <div className="mb-5 rounded-[26px] bg-white p-5 shadow-sm">
-          <div className="text-xs font-bold text-blue-700">فیش‌های حقوقی</div>
-          <h2 className="mt-1 text-xl font-black">فیش‌های حقوقی من</h2>
-          <p className="mt-1 text-xs font-bold text-slate-500">فیش‌ها از جدیدترین دوره مرتب شده‌اند.</p>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-bold text-blue-700">فیش‌های حقوقی</div>
+              <h1 className="mt-1 text-2xl font-black">فیش‌های حقوقی من</h1>
+              <p className="mt-1 text-xs font-bold text-slate-500">{employee?.full_name || "کاربر گرامی"} — فیش‌ها از جدیدترین دوره مرتب شده‌اند.</p>
+            </div>
+            <Link href="/payslip/dashboard" className="rounded-xl bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-700">← پنل پرسنلی</Link>
+          </div>
         </div>
         {error && <div className="mb-4 rounded-2xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}
         {loading ? <div className="rounded-2xl bg-white p-8 text-center text-sm font-bold">در حال دریافت فیش‌ها...</div> : months.length === 0 ? <div className="rounded-2xl bg-white p-8 text-center text-sm font-bold text-slate-500">هنوز فیشی ثبت نشده است.</div> : (
