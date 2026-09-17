@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import CompanyWelcomeBanner from "./CompanyWelcomeBanner";
-import EmployeeBottomNav from "./EmployeeBottomNav";
 
 export default function EmployeeAuthenticatedShell({ children }) {
   const pathname = usePathname();
@@ -11,7 +10,7 @@ export default function EmployeeAuthenticatedShell({ children }) {
 
   // The root employee URL is always the login landing page. Keep it completely
   // outside the authenticated shell so an existing session can never add the
-  // welcome banner or bottom navigation to the first screen.
+  // welcome banner to the first screen.
   if (normalizedPathname === "/payslip") return children;
 
   return <AuthenticatedEmployeeChrome>{children}</AuthenticatedEmployeeChrome>;
@@ -54,7 +53,6 @@ function AuthenticatedEmployeeChrome({ children }) {
     <>
       <CompanyWelcomeBanner employee={employee} />
       <div className="pt-20 sm:pt-24">{children}</div>
-      <EmployeeBottomNav />
     </>
   );
 }
