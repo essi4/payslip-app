@@ -118,9 +118,10 @@ export async function POST(request) {
 
     const payslipResult = await pool.query(
       `SELECT p.id, p.personnel_id, p.year, p.month, p.bank_account, p.job_group, p.job_title,
-              p.base_salary, p.overtime, p.bonus, p.housing_allowance, p.food_allowance,
-              p.marriage_allowance, p.child_allowance, p.other_benefits, p.insurance, p.tax,
-              p.other_deductions, p.net_salary, p.created_at,
+              p.base_salary, p.overtime, p.bonus, p.seniority_allowance, p.past_seniority_allowance,
+              p.mission_allowance, p.work_days, p.mission_days, p.mission_hours, p.seniority_eligible,
+              p.housing_allowance, p.food_allowance, p.marriage_allowance, p.child_allowance,
+              p.other_benefits, p.insurance, p.tax, p.other_deductions, p.net_salary, p.created_at,
               e.full_name, e.personnel_code, e.national_id, e.department,
               e.job_title AS employee_job_title,
               e.company_id, c.name AS company_name
