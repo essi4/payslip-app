@@ -16,11 +16,11 @@ test("employee dashboard presents the approved three-card personnel layout with 
   assert.match(dashboard, /امضا شده/);
   assert.match(dashboard, /شماره موبایل/);
   assert.match(dashboard, /تایید شده/);
-  assert.match(dashboard, /employee\?\.mobile/);
-  assert.match(dashboard, /employee\?\.personnel_code/);
-  assert.match(dashboard, /\/payslip\/slips/);
-  assert.match(dashboard, /\/payslip\/order/);
-  assert.match(dashboard, /\/payslip\/account/);
+  assert.match(dashboard, /employee\\?\\.mobile/);
+  assert.match(dashboard, /employee\\?\\.personnel_code/);
+  assert.match(dashboard, /\\/payslip\\/slips/);
+  assert.match(dashboard, /\\/payslip\\/order/);
+  assert.match(dashboard, /\\/payslip\\/account/);
 });
 
 test("payslip card exposes year/month selection and the complete payslip payment summary", async () => {
@@ -38,7 +38,21 @@ test("payslip card exposes year/month selection and the complete payslip payment
   assert.match(dashboard, /net_salary/);
 });
 
+test("payslip detail is designed as a compact single-page printable document", async () => {
+  const slips = await read("app/payslip/slips/page.js");
+
+  assert.match(slips, /فیش حقوق و دستمزد/);
+  assert.match(slips, /print\\:page/);
+  assert.match(slips, /print\\:break-inside-avoid/);
+  assert.match(slips, /پرداختی‌ها و مزایا/);
+  assert.match(slips, /کسورات/);
+  assert.match(slips, /جمع کل پرداختی‌ها/);
+  assert.match(slips, /جمع کل کسورات/);
+  assert.match(slips, /خالص پرداختی/);
+  assert.match(slips, /چاپ فیش/);
+});
+
 test("employee session payload includes the mobile number needed by the dashboard", async () => {
   const route = await read("app/api/payslip/route.js");
-  assert.match(route, /p\.mobile/);
+  assert.match(route, /p\\.mobile/);
 });
