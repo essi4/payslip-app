@@ -23,6 +23,21 @@ test("employee dashboard presents the approved three-card personnel layout with 
   assert.match(dashboard, /\/payslip\/account/);
 });
 
+test("payslip card exposes year/month selection and the complete payslip payment summary", async () => {
+  const dashboard = await read("app/payslip/dashboard/page.js");
+
+  assert.match(dashboard, /سال فیش/);
+  assert.match(dashboard, /ماه فیش/);
+  assert.match(dashboard, /selectedPayslip/);
+  assert.match(dashboard, /پرداختی‌ها/);
+  assert.match(dashboard, /کسورات/);
+  assert.match(dashboard, /خالص پرداختی/);
+  assert.match(dashboard, /base_salary/);
+  assert.match(dashboard, /insurance/);
+  assert.match(dashboard, /tax/);
+  assert.match(dashboard, /net_salary/);
+});
+
 test("employee session payload includes the mobile number needed by the dashboard", async () => {
   const route = await read("app/api/payslip/route.js");
   assert.match(route, /p\.mobile/);
