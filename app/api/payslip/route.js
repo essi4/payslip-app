@@ -19,7 +19,7 @@ function rateLimitedResponse(retryAfterSeconds) {
 }
 
 const EMPLOYEE_SELECT = `
-  SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.department, p.job_title,
+  SELECT p.id, p.full_name, p.national_id, p.personnel_code, p.mobile, p.department, p.job_title,
          p.company_id, c.name AS company_name, p.payslip_password
   FROM personnel p
   LEFT JOIN companies c ON c.id = p.company_id
