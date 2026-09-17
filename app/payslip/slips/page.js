@@ -14,16 +14,26 @@ function toman(value) {
 }
 
 function formatLabel(value) {
-  return String(value || "").trim() || "—";
+  return String(value ?? "").trim() || "—";
 }
 
 function MoneyRow({ item, tone = "normal" }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-3 py-1.5 sm:px-4 sm:py-2">
-      <span className="text-[10px] font-bold text-slate-600 sm:text-[11px]">{item.label}</span>
-      <span className={`whitespace-nowrap text-[10px] font-black sm:text-[11px] ${tone === "red" ? "text-red-700" : "text-slate-900"}`}>
-        {toman(item.amount)}
-      </span>
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:px-5">
+      <span className="text-xs font-bold text-slate-600 sm:text-sm">{item.label}</span>
+      <div className="text-left">
+        <div className={`whitespace-nowrap text-xs font-black sm:text-sm ${tone === "red" ? "text-rose-700" : "text-slate-900"}`}>{toman(item.amount)}</div>
+        <div className="mt-0.5 text-[9px] font-semibold text-slate-400">{rial(item.amount)}</div>
+      </div>
+    </div>
+  );
+}
+
+function Detail({ label, value, icon }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400"><span>{icon}</span><span>{label}</span></div>
+      <div className="mt-1.5 truncate text-xs font-black text-slate-800 sm:text-sm">{formatLabel(value)}</div>
     </div>
   );
 }
@@ -39,48 +49,26 @@ export default function EmployeePayslipsPage() {
   const [error, setError] = useState("");
 
   const years = useMemo(() => getPayslipYears(months), [months]);
-  const availableMonths = useMemo(
-    () => getAvailablePayslipMonths(months, selectedYear),
-    [months, selectedYear],
-  );
+  const availableMonths = useMemo(() => getAvailablePayslipMonths(months, selectedYear), [months, selectedYear]);
 
   async function loadPayslip(year, month) {
-    if (!year || !month) {
-      setSelected(null);
-      return;
-    }
-    setPayslipLoading(true);
-    setError("");
+    if (!year || !month) { setSelected(null); return; }
+    setPayslipLoading(true); setError("");
     try {
-      const response = await fetch("/api/payslip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ year, month }),
-      });
+      const response = await fetch("/api/payslip", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ year, month }) });
       const data = await response.json();
       if (!response.ok || !data?.success) throw new Error(data?.error || "فیش قابل نمایش نیست.");
       setSelected(data.data?.[0] || data.payslip || null);
-    } catch (err) {
-      setSelected(null);
-      setError(err.message || "خطا در دریافت فیش.");
-    } finally {
-      setPayslipLoading(false);
-    }
+    } catch (err) { setSelected(null); setError(err.message || "خطا در دریافت فیش."); }
+    finally { setPayslipLoading(false); }
   }
 
   useEffect(() => {
     let active = true;
     async function loadList() {
-      setLoading(true);
-      setError("");
+      setLoading(true); setError("");
       try {
-        const response = await fetch("/api/payslip", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-          body: JSON.stringify({}),
-        });
+        const response = await fetch("/api/payslip", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({}) });
         const data = await response.json();
         if (!response.ok || !data?.success) throw new Error(data?.error || "دریافت فیش‌ها انجام نشد.");
         if (!active) return;
@@ -89,13 +77,9 @@ export default function EmployeePayslipsPage() {
         setMonths(list);
         const firstYear = getPayslipYears(list)[0] || "";
         const firstMonth = getAvailablePayslipMonths(list, firstYear)[0]?.month || "";
-        setSelectedYear(firstYear);
-        setSelectedMonth(String(firstMonth || ""));
-      } catch (err) {
-        if (active) setError(err.message || "خطا در دریافت فیش‌ها.");
-      } finally {
-        if (active) setLoading(false);
-      }
+        setSelectedYear(firstYear); setSelectedMonth(String(firstMonth || ""));
+      } catch (err) { if (active) setError(err.message || "خطا در دریافت فیش‌ها."); }
+      finally { if (active) setLoading(false); }
     }
     loadList();
     return () => { active = false; };
@@ -103,125 +87,86 @@ export default function EmployeePayslipsPage() {
 
   useEffect(() => {
     if (!selectedYear) return;
-    const monthExists = availableMonths.some((item) => String(item.month) === String(selectedMonth));
-    if (!monthExists) {
-      setSelectedMonth(String(availableMonths[0]?.month || ""));
-    }
+    if (!availableMonths.some((item) => String(item.month) === String(selectedMonth))) setSelectedMonth(String(availableMonths[0]?.month || ""));
   }, [availableMonths, selectedMonth, selectedYear]);
 
   useEffect(() => {
-    if (!selectedYear || !selectedMonth) return;
-    loadPayslip(selectedYear, selectedMonth);
+    if (selectedYear && selectedMonth) loadPayslip(selectedYear, selectedMonth);
   }, [selectedYear, selectedMonth]);
 
-  if (loading) {
-    return <main dir="rtl" className="min-h-screen bg-slate-50 px-4 pb-28 pt-28 sm:px-6"><div className="mx-auto max-w-4xl rounded-2xl bg-white p-8 text-center text-sm font-bold">در حال دریافت فیش‌ها...</div></main>;
-  }
+  if (loading) return <main dir="rtl" className="min-h-screen bg-slate-950 px-4 py-24"><div className="mx-auto max-w-5xl rounded-3xl bg-white p-10 text-center text-sm font-black text-slate-700 shadow-2xl">در حال دریافت فیش حقوقی...</div></main>;
 
   if (selected) {
     const p = selected;
     const breakdown = buildPayslipBreakdown(p);
     const employeeDetails = [
-      ["نام و نام خانوادگی", p.full_name],
-      ["کد ملی", p.national_id],
-      ["کد پرسنلی", p.personnel_code],
-      ["واحد / دپارتمان", p.department],
-      ["عنوان شغلی", p.job_title || p.employee_job_title],
-      ["گروه مزدی", p.job_group],
-      ["روزهای کارکرد", p.work_days],
-      ["روز مأموریت", p.mission_days],
-      ["ساعت مأموریت", p.mission_hours],
-      ["شماره حساب", p.bank_account],
+      ["نام و نام خانوادگی", p.full_name, "👤"], ["کد پرسنلی", p.personnel_code, "🪪"],
+      ["عنوان شغلی", p.job_title || p.employee_job_title, "💼"], ["گروه مزدی", p.job_group, "🏷️"],
+      ["واحد / دپارتمان", p.department, "🏢"], ["روزهای کارکرد", p.work_days, "📅"],
+      ["روز مأموریت", p.mission_days, "🚗"], ["شماره حساب", p.bank_account, "💳"],
     ];
 
     return (
-      <main dir="rtl" className="min-h-screen bg-slate-100 px-2 pb-24 pt-20 sm:px-4 sm:pt-24 print:min-h-0 print:bg-white print:p-0">
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg print:max-w-none print:rounded-none print:border-0 print:shadow-none">
-          <div className="border-b border-slate-200 bg-white px-3 py-3 sm:px-5 print:hidden">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <label className="flex-1">
-                <span className="mb-1 block text-[10px] font-black text-slate-500">انتخاب سال</span>
-                <select value={selectedYear} onChange={(event) => setSelectedYear(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-black text-slate-800 outline-none focus:border-blue-500">
-                  {years.map((year) => <option key={year} value={year}>{year}</option>)}
-                </select>
-              </label>
-              <label className="flex-1">
-                <span className="mb-1 block text-[10px] font-black text-slate-500">انتخاب ماه</span>
-                <select value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-black text-slate-800 outline-none focus:border-blue-500">
-                  {availableMonths.map((item) => <option key={`${item.year}-${item.month}-${item.id || "payslip"}`} value={item.month}>{item.month}</option>)}
-                </select>
-              </label>
-              {payslipLoading && <div className="rounded-xl bg-blue-50 px-3 py-2.5 text-[10px] font-black text-blue-700">در حال دریافت...</div>}
+      <main dir="rtl" className="min-h-screen bg-slate-100 px-3 pb-10 pt-6 sm:px-5 sm:pt-10 print:bg-white print:p-0">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
+            <div><div className="text-xs font-black text-blue-700">سامانه حقوق و دستمزد</div><h1 className="mt-1 text-xl font-black text-slate-900 sm:text-2xl">فیش حقوقی من</h1></div>
+            <div className="flex gap-2">
+              <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black shadow-sm outline-none focus:border-blue-500">{years.map((year) => <option key={year} value={year}>{year}</option>)}</select>
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black shadow-sm outline-none focus:border-blue-500">{availableMonths.map((item) => <option key={`${item.year}-${item.month}-${item.id || "payslip"}`} value={item.month}>{item.month}</option>)}</select>
             </div>
           </div>
 
-          <header className="bg-slate-950 px-4 py-4 text-white sm:px-6 sm:py-5 print:px-5 print:py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="text-[10px] font-bold text-blue-200 sm:text-xs">{formatLabel(p.company_name)}</div>
-                <h1 className="mt-1 text-xl font-black sm:text-2xl">فیش حقوق و دستمزد</h1>
-                <div className="mt-1 text-[10px] font-bold text-slate-300 sm:text-xs">دوره پرداخت: {formatLabel(p.month)} {formatLabel(p.year)}</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-left sm:px-4">
-                <div className="text-[9px] font-bold text-blue-200">خالص پرداختی</div>
-                <div className="mt-0.5 text-base font-black sm:text-lg">{toman(p.net_salary)}</div>
-              </div>
-            </div>
-          </header>
-
-          <section className="border-b border-slate-200 bg-slate-50 px-3 py-2.5 sm:px-5 print:px-4 print:py-2">
-            <div className="mb-1.5 flex items-center justify-between">
-              <h2 className="text-[11px] font-black text-slate-900 sm:text-xs">مشخصات پرسنلی و کارکرد</h2>
-              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[8px] font-black text-blue-700">نسخه رسمی فیش</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-              {employeeDetails.map(([label, value]) => (
-                <div key={label} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-                  <div className="text-[7px] font-bold text-slate-400">{label}</div>
-                  <div className="mt-0.5 truncate text-[9px] font-black text-slate-800">{formatLabel(value)}</div>
+          <article className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl print:rounded-none print:border-0 print:shadow-none">
+            <header className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-7 text-white sm:px-8 sm:py-9">
+              <div className="absolute -left-12 -top-16 h-48 w-48 rounded-full bg-blue-500/20 blur-2xl" />
+              <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="mb-2 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold text-blue-100">{formatLabel(p.company_name)} • دوره {formatLabel(p.month)} {formatLabel(p.year)}</div>
+                  <h2 className="text-2xl font-black tracking-tight sm:text-3xl">فیش حقوق و دستمزد</h2>
+                  <p className="mt-2 text-xs font-bold text-slate-300 sm:text-sm">{formatLabel(p.full_name)} • کد پرسنلی {formatLabel(p.personnel_code)}</p>
                 </div>
-              ))}
-            </div>
-          </section>
+                <div className="rounded-3xl border border-white/10 bg-white/10 px-6 py-5 backdrop-blur-sm sm:min-w-[250px]">
+                  <div className="text-[10px] font-bold text-blue-200">خالص پرداختی</div>
+                  <div className="mt-1 text-2xl font-black sm:text-3xl">{toman(p.net_salary)}</div>
+                  <div className="mt-1 text-[10px] font-semibold text-slate-300">{rial(p.net_salary)}</div>
+                </div>
+              </div>
+            </header>
 
-          <section className="grid gap-3 p-3 sm:grid-cols-2 sm:p-5 print:grid-cols-2 print:gap-3 print:p-4">
-            <div className="overflow-hidden rounded-xl border border-emerald-200 bg-white">
-              <div className="flex items-center justify-between bg-emerald-50 px-3 py-2"><div className="text-[11px] font-black text-emerald-950">پرداختی‌ها و مزایا</div><div className="text-[9px] font-black text-emerald-700">{toman(breakdown.totalPayments)}</div></div>
-              {breakdown.payments.map((item) => <MoneyRow key={item.key} item={item} />)}
-              <div className="flex items-center justify-between border-t border-emerald-200 bg-emerald-50/70 px-3 py-2 font-black text-emerald-950"><span className="text-[10px]">جمع کل پرداختی‌ها</span><span className="text-[10px]">{toman(breakdown.totalPayments)}</span></div>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-red-200 bg-white">
-              <div className="flex items-center justify-between bg-red-50 px-3 py-2"><div className="text-[11px] font-black text-red-950">کسورات</div><div className="text-[9px] font-black text-red-700">{toman(breakdown.totalDeductions)}</div></div>
-              {breakdown.deductions.map((item) => <MoneyRow key={item.key} item={item} tone="red" />)}
-              <div className="flex items-center justify-between border-t border-red-200 bg-red-50/70 px-3 py-2 font-black text-red-950"><span className="text-[10px]">جمع کل کسورات</span><span className="text-[10px]">{toman(breakdown.totalDeductions)}</span></div>
-            </div>
-          </section>
+            <section className="border-b border-slate-200 bg-slate-50 px-4 py-5 sm:px-7">
+              <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-black text-slate-900">مشخصات پرسنلی و کارکرد</h3><span className="rounded-full bg-blue-100 px-3 py-1 text-[9px] font-black text-blue-700">اطلاعات فیش</span></div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{employeeDetails.map(([label, value, icon]) => <Detail key={label} label={label} value={value} icon={icon} />)}</div>
+            </section>
 
-          <section className="mx-3 mb-3 rounded-xl bg-blue-700 px-4 py-3 text-white sm:mx-5 sm:mb-4 print:mx-4 print:mb-3">
-            <div className="flex items-center justify-between gap-4"><div><div className="text-[9px] font-bold text-blue-100">خالص پرداختی قابل واریز</div><div className="mt-0.5 text-xl font-black sm:text-2xl">{toman(p.net_salary)}</div></div><div className="text-left text-[9px] font-bold text-blue-100 sm:text-[10px]">{rial(p.net_salary)}</div></div>
-          </section>
+            <section className="grid gap-4 p-4 sm:grid-cols-2 sm:p-7">
+              <div className="overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between bg-emerald-50 px-5 py-4"><div><div className="text-sm font-black text-emerald-950">پرداختی‌ها و مزایا</div><div className="mt-0.5 text-[9px] font-bold text-emerald-600">مزایای مشمول و غیرمشمول</div></div><span className="rounded-xl bg-white px-3 py-2 text-xs font-black text-emerald-700 shadow-sm">{toman(breakdown.totalPayments)}</span></div>
+                {breakdown.payments.map((item) => <MoneyRow key={item.key} item={item} />)}
+                <div className="flex items-center justify-between border-t border-emerald-200 bg-emerald-50/70 px-5 py-4"><span className="text-xs font-black text-emerald-950">جمع کل پرداختی‌ها</span><span className="text-sm font-black text-emerald-800">{toman(breakdown.totalPayments)}</span></div>
+              </div>
+              <div className="overflow-hidden rounded-3xl border border-rose-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between bg-rose-50 px-5 py-4"><div><div className="text-sm font-black text-rose-950">کسورات</div><div className="mt-0.5 text-[9px] font-bold text-rose-600">بیمه، مالیات و سایر کسورات</div></div><span className="rounded-xl bg-white px-3 py-2 text-xs font-black text-rose-700 shadow-sm">{toman(breakdown.totalDeductions)}</span></div>
+                {breakdown.deductions.map((item) => <MoneyRow key={item.key} item={item} tone="red" />)}
+                <div className="flex items-center justify-between border-t border-rose-200 bg-rose-50/70 px-5 py-4"><span className="text-xs font-black text-rose-950">جمع کل کسورات</span><span className="text-sm font-black text-rose-800">{toman(breakdown.totalDeductions)}</span></div>
+              </div>
+            </section>
 
-          <footer className="flex gap-2 px-3 pb-4 sm:px-5 print:hidden">
-            <button onClick={() => window.print()} className="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white">🖨 چاپ فیش</button>
-            <Link href="/payslip/dashboard" className="flex-1 rounded-xl bg-slate-100 px-4 py-2.5 text-center text-xs font-black text-slate-700">← پنل پرسنلی</Link>
-          </footer>
+            <section className="mx-4 mb-5 rounded-3xl bg-gradient-to-l from-blue-700 to-blue-600 p-5 text-white shadow-lg sm:mx-7 sm:mb-7 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-bold text-blue-100">مبلغ نهایی قابل واریز به حساب</div><div className="mt-1 text-2xl font-black sm:text-3xl">{toman(p.net_salary)}</div></div><div className="rounded-2xl bg-white/10 px-4 py-3 text-left text-xs font-bold text-blue-50">{rial(p.net_salary)}</div></div>
+            </section>
+
+            <footer className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50 p-4 sm:flex-row sm:p-5 print:hidden">
+              <button onClick={() => window.print()} className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg transition hover:bg-slate-800">🖨 چاپ فیش</button>
+              <Link href="/payslip/dashboard" className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm ring-1 ring-slate-200">← بازگشت به پنل پرسنلی</Link>
+              {payslipLoading && <div className="mr-auto self-center text-xs font-bold text-blue-600">در حال بروزرسانی فیش...</div>}
+            </footer>
+          </article>
+          {error && <div className="mt-3 rounded-2xl bg-rose-50 p-3 text-center text-xs font-bold text-rose-700">{error}</div>}
         </div>
       </main>
     );
   }
 
-  return (
-    <main dir="rtl" className="min-h-screen bg-slate-50 px-4 pb-28 pt-28 sm:px-6">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-5 rounded-[26px] bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div><div className="text-xs font-bold text-blue-700">فیش‌های حقوقی</div><h1 className="mt-1 text-2xl font-black">فیش‌های حقوقی من</h1><p className="mt-1 text-xs font-bold text-slate-500">{employee?.full_name || "کاربر گرامی"} — سال و ماه فیش را انتخاب کنید.</p></div>
-            <Link href="/payslip/dashboard" className="rounded-xl bg-slate-100 px-3 py-2 text-[10px] font-black text-slate-700">← پنل پرسنلی</Link>
-          </div>
-        </div>
-        {error && <div className="mb-4 rounded-2xl bg-red-50 p-3 text-center text-xs font-bold text-red-700">{error}</div>}
-        {months.length === 0 ? <div className="rounded-2xl bg-white p-8 text-center text-sm font-bold text-slate-500">هنوز فیشی ثبت نشده است.</div> : <div className="rounded-2xl bg-white p-4 text-center text-sm font-bold text-slate-500">فیش در حال آماده‌سازی است...</div>}
-      </div>
-    </main>
-  );
+  return <main dir="rtl" className="min-h-screen bg-slate-100 px-4 py-20"><div className="mx-auto max-w-4xl rounded-3xl bg-white p-8 text-center shadow-lg"><div className="text-sm font-black text-slate-900">فیش‌های حقوقی من</div><p className="mt-2 text-xs font-bold text-slate-500">{employee?.full_name || "کاربر گرامی"} — {months.length ? "فیش در حال آماده‌سازی است..." : "هنوز فیشی ثبت نشده است."}</p>{error && <div className="mt-4 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</div>}</div></main>;
 }
