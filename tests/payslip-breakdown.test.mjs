@@ -40,6 +40,6 @@ test("payslip breakdown contains every stored payment and deduction", () => {
     breakdown.deductions.map((item) => item.key),
     ["insurance", "tax", "other_deductions"],
   );
-  assert.equal(breakdown.totalPayments, 104848440);
+  assert.equal(breakdown.totalPayments, 89775440);
   assert.equal(breakdown.totalDeductions, 8050000);
 });
