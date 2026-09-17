@@ -14,6 +14,7 @@ export default function AdminLayout({ children }) {
     { title: "دوره‌های حقوق", href: "/admin/payroll-periods", icon: "📅" },
     { title: "فیش‌های حقوقی", href: "/admin/payslips", icon: "📄" },
     { title: "صدور گروهی فیش", href: "/admin/payslips/bulk", icon: "⚡" },
+    { title: "ورود فیش از Excel", href: "/admin/payslips/excel", icon: "📥" },
     { title: "چاپ گروهی فیش", href: "/admin/payslips/print", icon: "🖨️" },
     { title: "کنترل نهایی چاپ", href: "/admin/payslips/final-print", icon: "🛡️" },
     { title: "اصلاحات", href: "/admin/corrections", icon: "✏️" },
