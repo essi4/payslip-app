@@ -178,7 +178,7 @@ export default function EmployeePanelDashboard() {
               ) : selectedPayslip ? (
                 <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
                   <div className="border-b border-slate-200 bg-slate-950 px-4 py-3 text-white">
-                    <div className="text-[10px] font-bold text-blue-200">فیش {formatLabel(selectedPayslip.month)} {formatLabel(selectedPayslip.year)}</div>
+                    <div className="text-[10px] font-bold text-blue-200">{formatLabel(selectedPayslip.company_name)} — فیش {formatLabel(selectedPayslip.month)} {formatLabel(selectedPayslip.year)}</div>
                     <div className="mt-1 text-lg font-black">{toman(selectedPayslip.net_salary)}</div>
                     <div className="text-[9px] font-bold text-slate-300">خالص پرداختی</div>
                   </div>
@@ -186,10 +186,14 @@ export default function EmployeePanelDashboard() {
                   <div className="grid gap-2 p-3 sm:grid-cols-2">
                     {[
                       ["نام و نام خانوادگی", selectedPayslip.full_name],
+                      ["کد ملی", selectedPayslip.national_id],
                       ["کد پرسنلی", selectedPayslip.personnel_code],
+                      ["واحد / دپارتمان", selectedPayslip.department],
                       ["عنوان شغلی", selectedPayslip.job_title || selectedPayslip.employee_job_title],
                       ["گروه مزدی", selectedPayslip.job_group],
                       ["روزهای کارکرد", selectedPayslip.work_days],
+                      ["روز مأموریت", selectedPayslip.mission_days],
+                      ["ساعت مأموریت", selectedPayslip.mission_hours],
                       ["شماره حساب", selectedPayslip.bank_account],
                     ].map(([label, value]) => (
                       <div key={label} className="rounded-xl border border-slate-200 bg-white p-2">
