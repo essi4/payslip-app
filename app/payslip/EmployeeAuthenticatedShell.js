@@ -54,7 +54,7 @@ function AuthenticatedEmployeeChrome({ children }) {
   return (
     <>
       <CompanyWelcomeBanner employee={employee} />
-      <div className="pb-24 pt-20 sm:pb-28 sm:pt-24">{children}</div>
+      <div className="pb-24 pt-20 sm:pb-28 sm:pt-24 print:pb-0 print:pt-0">{children}</div>
       <EmployeeBottomNav />
     </>
   );
