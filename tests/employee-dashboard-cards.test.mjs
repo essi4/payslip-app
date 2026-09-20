@@ -63,3 +63,18 @@ test("employee payslip page uses the shared visual system without emoji icons", 
   assert.match(slips, /getAvailablePayslipMonths/);
   assert.doesNotMatch(slips, /🖨|📄|👤|🪪|💼|🏷️|🏢|📅|🚗|💳/);
 });
+
+test("employee order and account pages use lucide icons instead of emoji controls", async () => {
+  const order = await read("app/payslip/order/page.js");
+  const account = await read("app/payslip/account/page.js");
+
+  assert.match(order, /lucide-react/);
+  assert.match(order, /دانلود/);
+  assert.match(order, /چاپ/);
+  assert.doesNotMatch(order, /📋|⬇|🖨|🔒|📭/);
+
+  assert.match(account, /lucide-react/);
+  assert.match(account, /امنیت حساب/);
+  assert.match(account, /خروج امن/);
+  assert.doesNotMatch(account, /👤|🔐|🔑|🚪|🔒/);
+});
