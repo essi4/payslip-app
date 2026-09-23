@@ -13,5 +13,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate dependency lock
+        run: npm ci --ignore-scripts
+
       - name: Run security hardening regression
         run: node scripts/security-hardening-static.mjs
