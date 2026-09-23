@@ -1,0 +1,32 @@
+name: Prepare ESLint Lockfile
+
+on:
+  push:
+    branches: [security/next-15-5-26]
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: security/next-15-5-26
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Generate package-lock.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit
+
+      - name: Upload generated lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-lockfile
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 1
