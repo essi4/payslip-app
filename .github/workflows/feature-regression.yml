@@ -1,0 +1,19 @@
+name: Feature Regression
+
+on:
+  push:
+    branches:
+      - feature/employee-portal-ui-main-refresh
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/employee-dashboard-cards.test.mjs tests/bulk-payslips-engine.test.mjs tests/payslip-a5-print-period.test.mjs tests/payslip-breakdown.test.mjs tests/payslip-form-fields.test.mjs tests/payslip-import.test.mjs tests/payslip-month-storage.test.mjs
