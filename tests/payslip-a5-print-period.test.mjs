@@ -19,8 +19,9 @@ test("employee payslip shows the payment period from real payslip data", () => {
 
 test("payslip print layout is explicitly A5 portrait", () => {
   assert.match(page, /@page \{ size: A5 portrait; margin: 8mm; \}/);
-  assert.match(page, /width:148mm/);
-  assert.match(page, /min-width:148mm/);
   assert.match(page, /\.payslip-print-sheet/);
+  assert.match(page, /\.payslip-print-sheet \{ width:100%;/);
+  assert.match(page, /max-width:none !important/);
+  assert.match(page, /html, body \{ width:100%; min-width:0;/);
   assert.match(page, /\.pay-period-box/);
 });
