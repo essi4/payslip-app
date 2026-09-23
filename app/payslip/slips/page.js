@@ -5,12 +5,30 @@ import Link from "next/link";
 import { buildPayslipBreakdown } from "../../lib/payslip-breakdown";
 import { getPayslipYears, getAvailablePayslipMonths } from "../../lib/payslip-selection";
 
+const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+
+function toPersianDigits(value) {
+  return String(value ?? "").replace(/[0-9]/g, (digit) => persianDigits[digit]);
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("fa-IR").format(Number(value || 0));
+}
+
+function formatYear(value) {
+  return toPersianDigits(value);
+}
+
+function formatPeriod(value) {
+  return toPersianDigits(value);
+}
+
 function rial(value) {
-  return `${Number(value || 0).toLocaleString("fa-IR")} ریال`;
+  return `${formatMoney(value)} ریال`;
 }
 
 function toman(value) {
-  return `${Math.round(Number(value || 0) / 10).toLocaleString("fa-IR")} تومان`;
+  return `${formatMoney(Math.round(Number(value || 0) / 10))} تومان`;
 }
 
 function formatLabel(value) {
@@ -104,12 +122,15 @@ export default function EmployeePayslipsPage() {
   if (selected) {
     const p = selected;
     const breakdown = buildPayslipBreakdown(p);
-    const payYear = Number(p.year) ? Number(p.year).toLocaleString("fa-IR") : formatLabel(p.year);
+    const payYearNumber = Number(p.year);
+    const payYear = Number.isFinite(payYearNumber) && payYearNumber > 0
+      ? formatYear(p.year)
+      : formatLabel(p.year);
     const payMonthNumber = Number(p.month);
     const payMonth = jalaliMonths[payMonthNumber - 1] || formatLabel(p.month);
     const payPeriodNumber = Number(p.period ?? p.pay_period ?? p.month);
     const payPeriod = Number.isFinite(payPeriodNumber) && payPeriodNumber > 0
-      ? payPeriodNumber.toLocaleString("fa-IR")
+      ? formatPeriod(payPeriodNumber)
       : formatLabel(p.period ?? p.pay_period ?? p.month);
     const employeeDetails = [
       ["نام و نام خانوادگی", p.full_name, "👤"], ["کد پرسنلی", p.personnel_code, "🪪"],
