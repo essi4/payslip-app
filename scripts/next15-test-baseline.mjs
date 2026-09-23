@@ -32,6 +32,7 @@ function runTestsAllowFailure(cwd) {
 function failures(output) {
   return [...output.matchAll(/not ok \d+ - (.+)/g)]
     .map((match) => match[1].trim())
+    .map((value) => value.replace(/^\/[^\n]*\/tests\//, "tests/"))
     .sort();
 }
 
