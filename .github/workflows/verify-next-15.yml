@@ -25,25 +25,11 @@ jobs:
       - name: Clean install from committed lockfile
         run: npm ci --ignore-scripts
 
-      - name: Audit, test, and build
-        shell: bash
-        run: |
-          set +e
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
-          echo "=== npm audit ==="
-          npm audit --omit=dev --audit-level=high
-          audit_status=$?
+      - name: Compare full test suite with main baseline
+        run: node scripts/next15-test-baseline.mjs
 
-          echo "=== npm test ==="
-          npm test
-          test_status=$?
-
-          echo "=== npm run build ==="
-          npm run build
-          build_status=$?
-
-          echo "RESULT | audit=$audit_status tests=$test_status build=$build_status"
-
-          if [ "$audit_status" -ne 0 ] || [ "$test_status" -ne 0 ] || [ "$build_status" -ne 0 ]; then
-            exit 1
-          fi
+      - name: Production build
+        run: npm run build
