@@ -1,15 +1,14 @@
 name: Verify Next 15 Migration
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [security/next-15-5-26]
   workflow_dispatch:
 
 jobs:
   next-15-verification:
-    if: github.head_ref == 'security/next-15-5-26'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout migration branch
         uses: actions/checkout@v4
@@ -26,11 +25,25 @@ jobs:
       - name: Clean install from committed lockfile
         run: npm ci --ignore-scripts
 
-      - name: Production dependency audit
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit, test, and build
+        shell: bash
+        run: |
+          set +e
 
-      - name: Test suite
-        run: npm test
+          echo "=== npm audit ==="
+          npm audit --omit=dev --audit-level=high
+          audit_status=$?
 
-      - name: Production build
-        run: npm run build
+          echo "=== npm test ==="
+          npm test
+          test_status=$?
+
+          echo "=== npm run build ==="
+          npm run build
+          build_status=$?
+
+          echo "RESULT | audit=$audit_status tests=$test_status build=$build_status"
+
+          if [ "$audit_status" -ne 0 ] || [ "$test_status" -ne 0 ] || [ "$build_status" -ne 0 ]; then
+            exit 1
+          fi
