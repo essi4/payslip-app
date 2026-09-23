@@ -17,6 +17,11 @@ function formatLabel(value) {
   return String(value ?? "").trim() || "—";
 }
 
+const jalaliMonths = [
+  "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+  "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
+];
+
 function MoneyRow({ item, tone = "normal" }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:px-5">
@@ -99,6 +104,13 @@ export default function EmployeePayslipsPage() {
   if (selected) {
     const p = selected;
     const breakdown = buildPayslipBreakdown(p);
+    const payYear = Number(p.year) ? Number(p.year).toLocaleString("fa-IR") : formatLabel(p.year);
+    const payMonthNumber = Number(p.month);
+    const payMonth = jalaliMonths[payMonthNumber - 1] || formatLabel(p.month);
+    const payPeriodNumber = Number(p.period ?? p.pay_period ?? p.month);
+    const payPeriod = Number.isFinite(payPeriodNumber) && payPeriodNumber > 0
+      ? payPeriodNumber.toLocaleString("fa-IR")
+      : formatLabel(p.period ?? p.pay_period ?? p.month);
     const employeeDetails = [
       ["نام و نام خانوادگی", p.full_name, "👤"], ["کد پرسنلی", p.personnel_code, "🪪"],
       ["عنوان شغلی", p.job_title || p.employee_job_title, "💼"], ["گروه مزدی", p.job_group, "🏷️"],
@@ -117,13 +129,27 @@ export default function EmployeePayslipsPage() {
             </div>
           </div>
 
-          <article className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] print:rounded-none print:border-0 print:shadow-none">
+          <article className="payslip-print-sheet overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] print:rounded-none print:border-0 print:shadow-none">
             <header className="relative overflow-hidden bg-slate-950 px-5 py-7 text-white sm:px-8 sm:py-9">
               <div className="absolute -left-10 -top-16 h-52 w-52 rounded-full bg-blue-600/25 blur-3xl" />
               <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="mb-2 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold text-blue-100">{formatLabel(p.company_name)} • دوره {formatLabel(p.month)} {formatLabel(p.year)}</div>
+                  <div className="mb-2 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold text-blue-100">{formatLabel(p.company_name)} • {payMonth} {payYear}</div>
                   <h2 className="text-2xl font-black tracking-tight sm:text-3xl">فیش حقوق و دستمزد</h2>
+                  <div className="pay-period-box">
+                    <div className="period-item">
+                      <span className="period-label">سال پرداخت</span>
+                      <strong>{payYear}</strong>
+                    </div>
+                    <div className="period-item">
+                      <span className="period-label">ماه پرداخت</span>
+                      <strong>{payMonth}</strong>
+                    </div>
+                    <div className="period-item">
+                      <span className="period-label">دوره حقوق</span>
+                      <strong>دوره {payPeriod}</strong>
+                    </div>
+                  </div>
                   <p className="mt-2 text-xs font-bold text-slate-300 sm:text-sm">{formatLabel(p.full_name)} • کد پرسنلی {formatLabel(p.personnel_code)}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-5 py-4 shadow-inner backdrop-blur-sm sm:min-w-[285px]">
@@ -161,6 +187,27 @@ export default function EmployeePayslipsPage() {
               <Link href="/payslip/dashboard" className="rounded-xl bg-white px-5 py-3 text-center text-sm font-black text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50">← بازگشت به پنل پرسنلی</Link>
               {payslipLoading && <div className="mr-auto self-center text-xs font-bold text-blue-600">در حال بروزرسانی فیش...</div>}
             </footer>
+          <style jsx global>{`
+@page { size: A5 portrait; margin: 8mm; }
+.pay-period-box { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 10px; padding:10px; border:1px solid rgba(148,163,184,.45); border-radius:10px; background:rgba(255,255,255,.08); text-align:center; }
+.period-item { min-width:0; padding:7px 4px; border-left:1px solid rgba(148,163,184,.35); }
+.period-item:last-child { border-left:0; }
+.period-label { display:block; margin-bottom:4px; color:#bfdbfe; font-size:11px; font-weight:700; }
+.period-item strong { display:block; color:#fff; font-size:14px; font-weight:900; white-space:nowrap; }
+@media print {
+  html, body { width:100%; min-width:0; margin:0; padding:0; background:#fff !important; }
+  .payslip-print-sheet { width:100%; max-width:none !important; margin:0 !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; overflow:visible !important; }
+  .payslip-print-sheet header { padding:5mm 6mm !important; }
+  .payslip-print-sheet .pay-period-box { display:grid !important; margin:3mm 0 4mm; padding:2mm; border:.3mm solid #b7c6d8; border-radius:2mm; background:#f1f5f9 !important; }
+  .payslip-print-sheet .period-item { padding:1.5mm 1mm; border-left:.3mm solid #cbd5e1; }
+  .payslip-print-sheet .period-item:last-child { border-left:0; }
+  .payslip-print-sheet .period-label { margin-bottom:.8mm; color:#64748b !important; font-size:7pt; }
+  .payslip-print-sheet .period-item strong { color:#1e3a5f !important; font-size:9pt; }
+  .payslip-print-sheet header .absolute { display:none !important; }
+  .payslip-print-sheet section { break-inside:avoid; }
+  .payslip-print-sheet footer { display:none !important; }
+}
+`}</style>
           </article>
           {error && <div className="mt-3 rounded-2xl bg-rose-50 p-3 text-center text-xs font-bold text-rose-700">{error}</div>}
         </div>
