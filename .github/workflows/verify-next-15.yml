@@ -28,6 +28,12 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Verify top-level production dependency tree
+        run: npm ls --depth=0 --omit=dev
+
       - name: Compare full test suite with main baseline
         run: node scripts/next15-test-baseline.mjs
 
