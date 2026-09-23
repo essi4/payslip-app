@@ -13,10 +13,16 @@ export default function EmployeeAuthenticatedShell({ children }) {
   // welcome banner to the first screen.
   if (normalizedPathname === "/payslip") return children;
 
-  return <AuthenticatedEmployeeChrome>{children}</AuthenticatedEmployeeChrome>;
+  // The dashboard renders its own single welcome/header block. Do not mount
+  // the shared banner here or the employee sees the greeting twice.
+  if (normalizedPathname === "/payslip/dashboard") {
+    return <AuthenticatedEmployeeChrome showBanner={false}>{children}</AuthenticatedEmployeeChrome>;
+  }
+
+  return <AuthenticatedEmployeeChrome showBanner>{children}</AuthenticatedEmployeeChrome>;
 }
 
-function AuthenticatedEmployeeChrome({ children }) {
+function AuthenticatedEmployeeChrome({ children, showBanner }) {
   const [authenticated, setAuthenticated] = useState(false);
   const [checked, setChecked] = useState(false);
   const [employee, setEmployee] = useState(null);
@@ -51,8 +57,8 @@ function AuthenticatedEmployeeChrome({ children }) {
 
   return (
     <>
-      <CompanyWelcomeBanner employee={employee} />
-      <div className="pt-20 sm:pt-24">{children}</div>
+      {showBanner ? <CompanyWelcomeBanner employee={employee} /> : null}
+      <div className={showBanner ? "pt-20 sm:pt-24" : ""}>{children}</div>
     </>
   );
 }
