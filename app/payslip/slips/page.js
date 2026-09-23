@@ -128,7 +128,7 @@ export default function EmployeePayslipsPage() {
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-5 py-4 shadow-inner backdrop-blur-sm sm:min-w-[285px]">
                   <div className="text-[10px] font-bold text-blue-200">خالص پرداختی</div>
-                  <div className="mt-1 text-2xl font-black tracking-tight text-blue-950 sm:text-3xl">{toman(p.net_salary)}</div>
+                  <div className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">{toman(p.net_salary)}</div>
                   <div className="mt-1 text-[10px] font-semibold text-slate-300">{rial(p.net_salary)}</div>
                 </div>
               </div>
