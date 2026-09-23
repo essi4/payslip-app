@@ -31,7 +31,7 @@ check(
   xlsxSpec === "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz" &&
     lockedXlsx.version === "0.20.3" &&
     lockedXlsx.resolved === xlsxSpec &&
-    lockedXlsx.integrity === "sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH3AJA==" ||
+    lockedXlsx.integrity === "sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH+3AJA==" ||
   false
 );
 check("XLSX | no vulnerable 0.18.5 root spec", xlsxSpec !== "^0.18.5");
