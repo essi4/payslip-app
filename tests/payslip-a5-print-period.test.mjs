@@ -25,3 +25,16 @@ test("payslip print layout is explicitly A5 portrait", () => {
   assert.match(page, /html, body \{ width:100%; min-width:0;/);
   assert.match(page, /\.pay-period-box/);
 });
+
+test("payslip uses ungrouped Persian digits for year and grouped formatting only for money", () => {
+  assert.match(page, /const persianDigits = "۰۱۲۳۴۵۶۷۸۹"/);
+  assert.match(page, /return String\(value \?\? ""\)\.replace\(\/\[0-9\]\/g/);
+  assert.match(page, /function formatMoney\(value\)/);
+  assert.match(page, /new Intl\.NumberFormat\("fa-IR"\)/);
+  assert.match(page, /function formatYear\(value\)/);
+  assert.match(page, /function formatPeriod\(value\)/);
+  assert.match(page, /formatYear\(p\.year\)/);
+  assert.match(page, /formatPeriod\(payPeriodNumber\)/);
+  assert.doesNotMatch(page, /payYearNumber\)\.toLocaleString\("fa-IR"\)/);
+  assert.doesNotMatch(page, /payPeriodNumber\.toLocaleString\("fa-IR"\)/);
+});
