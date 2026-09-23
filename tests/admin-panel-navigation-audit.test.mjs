@@ -33,6 +33,13 @@ test("admin main menu has the audited set of user-facing sections", () => {
   assert.ok(!menuItems().includes("/admin/test-mode"));
 });
 
+test("admin login is isolated from the authenticated admin shell", () => {
+  assert.match(
+    layout,
+    /if \(pathname === "\/admin\/login"\) \{\s*return <\/>/
+  );
+});
+
 test("admin logout action is exposed and wired to the existing logout API", () => {
   assert.match(layout, /async function handleLogout\(\)/);
   assert.match(layout, /fetch\("\/api\/auth\/logout"/);
