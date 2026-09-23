@@ -12,6 +12,7 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+      # Trigger dependency refresh from the migration branch.
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
