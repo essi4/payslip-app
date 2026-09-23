@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import "./payslip-view.css";
 
 export default function PayslipView({ params }) {
+  const { id } = use(params);
   const [payslip, setPayslip] = useState(null);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,7 +13,7 @@ export default function PayslipView({ params }) {
     async function loadData() {
       try {
         setLoading(true);
-        const payslipResponse = await fetch(`/api/payslips/${encodeURIComponent(params.id)}`, { cache: "no-store" });
+        const payslipResponse = await fetch(`/api/payslips/${encodeURIComponent(id)}, { cache: "no-store" });
         const payslipResult = await payslipResponse.json();
         if (payslipResult.success && Array.isArray(payslipResult.data)) setPayslip(payslipResult.data[0] || null);
         try {
@@ -24,7 +25,7 @@ export default function PayslipView({ params }) {
       finally { setLoading(false); }
     }
     loadData();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) return <div className="payslip-loading" dir="rtl"><div><div className="loading-spinner"></div><p>در حال دریافت فیش حقوقی...</p></div></div>;
   if (!payslip) return <div className="payslip-loading" dir="rtl"><div><h2>فیش حقوقی پیدا نشد</h2><p>فیش موردنظر وجود ندارد یا حذف شده است.</p><button type="button" onClick={() => window.history.back()}>← بازگشت</button></div></div>;
