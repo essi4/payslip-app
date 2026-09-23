@@ -13,7 +13,7 @@ export default function PayslipView({ params }) {
     async function loadData() {
       try {
         setLoading(true);
-        const payslipResponse = await fetch(`/api/payslips/${encodeURIComponent(id)}, { cache: "no-store" });
+        const payslipResponse = await fetch(`/api/payslips/${encodeURIComponent(id)}`, { cache: "no-store" });
         const payslipResult = await payslipResponse.json();
         if (payslipResult.success && Array.isArray(payslipResult.data)) setPayslip(payslipResult.data[0] || null);
         try {
