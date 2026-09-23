@@ -117,7 +117,7 @@ export default function EmployeePayslipsPage() {
             </div>
           </div>
 
-          <article className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] print:rounded-none print:border-0 print:shadow-none">
+          <article className="payslip-print-sheet overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] print:rounded-none print:border-0 print:shadow-none">
             <header className="relative overflow-hidden bg-slate-950 px-5 py-7 text-white sm:px-8 sm:py-9">
               <div className="absolute -left-10 -top-16 h-52 w-52 rounded-full bg-blue-600/25 blur-3xl" />
               <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
