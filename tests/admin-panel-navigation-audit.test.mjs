@@ -6,7 +6,7 @@ const layoutPath = new URL("../app/admin/layout.js", import.meta.url);
 const layout = fs.readFileSync(layoutPath, "utf8");
 
 function menuItems() {
-  const section = layout.match(/const menuItems = \[(.*?)\n  \];/s)?.[1] || "";
+  const section = layout.match(/const menuItems = \[(.*?)\];/s)?.[1] || "";
   return [...section.matchAll(/\{ title: "[^"]+", href: "([^"]+)", icon:/g)].map((match) => match[1]);
 }
 
