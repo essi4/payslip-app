@@ -24,6 +24,7 @@ jobs:
           node-version: 20
           cache: npm
 
+      # Generate the exact lockfile that npm ci will consume.
       - name: Generate package-lock.json
         run: npm install --package-lock-only --ignore-scripts --no-audit
 
