@@ -134,7 +134,7 @@ export default function EmployeePayslipsPage() {
               <div className="absolute -left-10 -top-16 h-52 w-52 rounded-full bg-blue-600/25 blur-3xl" />
               <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="mb-2 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold text-blue-100">{formatLabel(p.company_name)} • دوره {formatLabel(p.month)} {formatLabel(p.year)}</div>
+                  <div className="mb-2 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-bold text-blue-100">{formatLabel(p.company_name)} • {payMonth} {payYear}</div>
                   <h2 className="text-2xl font-black tracking-tight sm:text-3xl">فیش حقوق و دستمزد</h2>
                   <div className="pay-period-box">
                     <div className="period-item">
@@ -195,7 +195,7 @@ export default function EmployeePayslipsPage() {
 .period-label { display:block; margin-bottom:4px; color:#bfdbfe; font-size:11px; font-weight:700; }
 .period-item strong { display:block; color:#fff; font-size:14px; font-weight:900; white-space:nowrap; }
 @media print {
-  html, body { width:148mm; min-width:148mm; margin:0; padding:0; background:#fff !important; }
+  html, body { width:100%; min-width:0; margin:0; padding:0; background:#fff !important; }
   .payslip-print-sheet { width:100%; max-width:none !important; margin:0 !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; overflow:visible !important; }
   .payslip-print-sheet header { padding:5mm 6mm !important; }
   .payslip-print-sheet .pay-period-box { display:grid !important; margin:3mm 0 4mm; padding:2mm; border:.3mm solid #b7c6d8; border-radius:2mm; background:#f1f5f9 !important; }
