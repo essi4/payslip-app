@@ -12,6 +12,7 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+      # Triggered only by human-authored branch updates.
     steps:
       - name: Checkout migration branch
         uses: actions/checkout@v4
