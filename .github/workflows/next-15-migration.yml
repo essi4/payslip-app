@@ -1,0 +1,59 @@
+name: Next 15 Migration
+
+on:
+  push:
+    branches:
+      - security/next-15-5-26
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: security/next-15-5-26
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Generate dependency changes with npm
+        if: contains(fromJSON('["14.2.35"]'), '14.2.35')
+        run: npm install next@15.5.26 react@19.1.1 react-dom@19.1.1 --save-exact
+
+      - name: Commit generated package changes
+        id: commit
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(next): migrate to next 15.5.26"
+          git push origin HEAD:security/next-15-5-26
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Stop after migration commit
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          echo "Dependency migration committed. Verification will run on the follow-up push."
+          exit 0
+
+      - name: Clean install
+        run: npm ci --ignore-scripts
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Production build
+        run: npm run build
