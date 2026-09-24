@@ -157,8 +157,10 @@ export default function AdminPage() {
 
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                سامانه فعال است
+                <span
+                  className={`h-2 w-2 rounded-full ${loading ? "bg-amber-400" : error ? "bg-rose-400" : "bg-emerald-400"}`}
+                />
+                {loading ? "در حال بررسی اتصال" : error ? "اتصال ناموفق" : "اتصال برقرار است"}
               </div>
 
               <button
