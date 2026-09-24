@@ -19,9 +19,6 @@ function formatYear(value) {
   return toPersianDigits(value);
 }
 
-function formatPeriod(value) {
-  return toPersianDigits(value);
-}
 
 function rial(value) {
   return `${formatMoney(value)} ریال`;
@@ -128,10 +125,6 @@ export default function EmployeePayslipsPage() {
       : formatLabel(p.year);
     const payMonthNumber = Number(p.month);
     const payMonth = jalaliMonths[payMonthNumber - 1] || formatLabel(p.month);
-    const payPeriodNumber = Number(p.period ?? p.pay_period ?? p.month);
-    const payPeriod = Number.isFinite(payPeriodNumber) && payPeriodNumber > 0
-      ? formatPeriod(payPeriodNumber)
-      : formatLabel(p.period ?? p.pay_period ?? p.month);
     const employeeDetails = [
       ["نام و نام خانوادگی", p.full_name, "👤"], ["کد پرسنلی", p.personnel_code, "🪪"],
       ["عنوان شغلی", p.job_title || p.employee_job_title, "💼"], ["گروه مزدی", p.job_group, "🏷️"],
@@ -165,10 +158,6 @@ export default function EmployeePayslipsPage() {
                     <div className="period-item">
                       <span className="period-label">ماه پرداخت</span>
                       <strong>{payMonth}</strong>
-                    </div>
-                    <div className="period-item">
-                      <span className="period-label">دوره حقوق</span>
-                      <strong>دوره {payPeriod}</strong>
                     </div>
                   </div>
                   <p className="mt-2 text-xs font-bold text-slate-300 sm:text-sm">{formatLabel(p.full_name)} • کد پرسنلی {formatLabel(p.personnel_code)}</p>
@@ -210,7 +199,7 @@ export default function EmployeePayslipsPage() {
             </footer>
           <style jsx global>{`
 @page { size: A5 portrait; margin: 8mm; }
-.pay-period-box { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 10px; padding:10px; border:1px solid rgba(148,163,184,.45); border-radius:10px; background:rgba(255,255,255,.08); text-align:center; }
+.pay-period-box { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0 10px; padding:10px; border:1px solid rgba(148,163,184,.45); border-radius:10px; background:rgba(255,255,255,.08); text-align:center; }
 .period-item { min-width:0; padding:7px 4px; border-left:1px solid rgba(148,163,184,.35); }
 .period-item:last-child { border-left:0; }
 .period-label { display:block; margin-bottom:4px; color:#bfdbfe; font-size:11px; font-weight:700; }
