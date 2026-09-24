@@ -19,9 +19,6 @@ function formatYear(value) {
   return toPersianDigits(value);
 }
 
-function formatPeriod(value) {
-  return toPersianDigits(value);
-}
 
 function rial(value) {
   return `${formatMoney(value)} ریال`;
@@ -128,10 +125,6 @@ export default function EmployeePayslipsPage() {
       : formatLabel(p.year);
     const payMonthNumber = Number(p.month);
     const payMonth = jalaliMonths[payMonthNumber - 1] || formatLabel(p.month);
-    const payPeriodNumber = Number(p.period ?? p.pay_period ?? p.month);
-    const payPeriod = Number.isFinite(payPeriodNumber) && payPeriodNumber > 0
-      ? formatPeriod(payPeriodNumber)
-      : formatLabel(p.period ?? p.pay_period ?? p.month);
     const employeeDetails = [
       ["نام و نام خانوادگی", p.full_name, "👤"], ["کد پرسنلی", p.personnel_code, "🪪"],
       ["عنوان شغلی", p.job_title || p.employee_job_title, "💼"], ["گروه مزدی", p.job_group, "🏷️"],
@@ -167,8 +160,8 @@ export default function EmployeePayslipsPage() {
                       <strong>{payMonth}</strong>
                     </div>
                     <div className="period-item">
-                      <span className="period-label">دوره حقوق</span>
-                      <strong>دوره {payPeriod}</strong>
+                      <span className="period-label">ماه پرداخت</span>
+                      <strong>{payMonth}</strong>
                     </div>
                   </div>
                   <p className="mt-2 text-xs font-bold text-slate-300 sm:text-sm">{formatLabel(p.full_name)} • کد پرسنلی {formatLabel(p.personnel_code)}</p>
