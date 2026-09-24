@@ -72,3 +72,10 @@ test("mobile admin navigation keeps primary links compact and secondary links be
   assert.match(layout, /aria-expanded=\{mobileMenuOpen\}/);
   assert.match(layout, /بیشتر/);
 });
+
+
+test("desktop admin sidebar keeps a scrollable menu area above the fixed footer", () => {
+  assert.match(layout, /fixed right-0 top-0 z-40 hidden h-screen w-64 flex-col/);
+  assert.match(layout, /min-h-0 flex-1 overflow-y-auto/);
+  assert.match(layout, /shrink-0 border-t border-slate-700/);
+});
