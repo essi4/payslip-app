@@ -67,7 +67,8 @@ test("admin navigation highlights only the most specific matching route", () => 
 });
 
 test("mobile admin navigation keeps primary links compact and secondary links behind more", () => {
-  assert.match(layout, /const mobilePrimaryHrefs = new Set\(/);
+  assert.match(layout, /const MOBILE_PRIMARY_HREFS = new Set\(/);
+  assert.doesNotMatch(layout, /mobilePrimaryHrefs/);
   assert.match(layout, /const mobileMoreItems = menuItems\.filter\(/);
   assert.match(layout, /aria-expanded=\{mobileMenuOpen\}/);
   assert.match(layout, /بیشتر/);
