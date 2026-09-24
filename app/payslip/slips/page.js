@@ -159,10 +159,6 @@ export default function EmployeePayslipsPage() {
                       <span className="period-label">ماه پرداخت</span>
                       <strong>{payMonth}</strong>
                     </div>
-                    <div className="period-item">
-                      <span className="period-label">ماه پرداخت</span>
-                      <strong>{payMonth}</strong>
-                    </div>
                   </div>
                   <p className="mt-2 text-xs font-bold text-slate-300 sm:text-sm">{formatLabel(p.full_name)} • کد پرسنلی {formatLabel(p.personnel_code)}</p>
                 </div>
@@ -203,7 +199,7 @@ export default function EmployeePayslipsPage() {
             </footer>
           <style jsx global>{`
 @page { size: A5 portrait; margin: 8mm; }
-.pay-period-box { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 10px; padding:10px; border:1px solid rgba(148,163,184,.45); border-radius:10px; background:rgba(255,255,255,.08); text-align:center; }
+.pay-period-box { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0 10px; padding:10px; border:1px solid rgba(148,163,184,.45); border-radius:10px; background:rgba(255,255,255,.08); text-align:center; }
 .period-item { min-width:0; padding:7px 4px; border-left:1px solid rgba(148,163,184,.35); }
 .period-item:last-child { border-left:0; }
 .period-label { display:block; margin-bottom:4px; color:#bfdbfe; font-size:11px; font-weight:700; }
