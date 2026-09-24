@@ -10,9 +10,8 @@ test("employee payslip shows the payment period from real payslip data", () => {
   assert.match(page, /const payMonth = jalaliMonths\[payMonthNumber - 1\]/);
   assert.match(page, /سال پرداخت/);
   assert.match(page, /ماه پرداخت/);
-  assert.match(page, /ماه پرداخت/);
   assert.match(page, /\{payMonth\}/);
-  assert.match(page, /<span className="period-label">ماه پرداخت<\/span>/);
+  assert.strictEqual((page.match(/<span className="period-label">ماه پرداخت<\/span>/g) || []).length, 1);
 });
 
 test("payslip print layout is explicitly A5 portrait", () => {
