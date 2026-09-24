@@ -8,12 +8,13 @@ const page = fs.readFileSync(pagePath, "utf8");
 test("employee payslip shows the payment period from real payslip data", () => {
   assert.match(page, /const payYear = Number\(p\.year\)/);
   assert.match(page, /const payMonth = jalaliMonths\[payMonthNumber - 1\]/);
+  assert.match(page, /const payPeriodNumber = Number\(p\.period \?\? p\.pay_period \?\? p\.month\)/);
   assert.match(page, /سال پرداخت/);
   assert.match(page, /ماه پرداخت/);
+  assert.match(page, /دوره حقوق/);
+  assert.match(page, /\{payYear\}/);
   assert.match(page, /\{payMonth\}/);
-  assert.match(page, /<span className="period-label">ماه پرداخت<\/span>/);
-  assert.match(page, /<strong>\{payMonth\}<\/strong>/);
-  assert.doesNotMatch(page, /دوره حقوق/);
+  assert.match(page, /دوره \{payPeriod\}/);
 });
 
 test("payslip print layout is explicitly A5 portrait", () => {
@@ -31,6 +32,9 @@ test("payslip uses ungrouped Persian digits for year and grouped formatting only
   assert.match(page, /function formatMoney\(value\)/);
   assert.match(page, /new Intl\.NumberFormat\("fa-IR"\)/);
   assert.match(page, /function formatYear\(value\)/);
+  assert.match(page, /function formatPeriod\(value\)/);
   assert.match(page, /formatYear\(p\.year\)/);
+  assert.match(page, /formatPeriod\(payPeriodNumber\)/);
   assert.doesNotMatch(page, /payYearNumber\)\.toLocaleString\("fa-IR"\)/);
+  assert.doesNotMatch(page, /payPeriodNumber\.toLocaleString\("fa-IR"\)/);
 });
