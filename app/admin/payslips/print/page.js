@@ -29,7 +29,23 @@ export default function PayslipPrintPage() {
   const filtered=useMemo(()=>payslips.filter(p=>!periodId||String(p.payroll_period_id)===String(periodId)),[payslips,periodId]);
   const selectedItems=useMemo(()=>filtered.filter(p=>selected.includes(Number(p.id))),[filtered,selected]);
   async function loadCompanies(){setLoading(true);setError("");try{const r=await fetch("/api/companies",{cache:"no-store"}),d=await r.json();if(!r.ok||!d.success)throw Error(d.error||"خطا در شرکت‌ها");setCompanies(Array.isArray(d.data)?d.data:[]);}catch(e){setError(e.message||"خطا در دریافت شرکت‌ها")}finally{setLoading(false)}}
-  async function loadCompanyData(id){if(!id){setPeriods([]);setPeriodId("");setPayslips([]);setSelected([]);return;}setLoadingData(true);setError("");try{const [pr,ps]=await Promise.all([fetch(`/api/payroll-periods?company_id=${encodeURIComponent(id)}`,{cache:"no-store"}),fetch(`/api/payslips?company_id=${encodeURIComponent(id)}`,{cache:"no-store"})]);const pd=await pr.json(),sd=await ps.json();if(!pr.ok||!pd.success)throw Error(pd.error||"خطا در دوره‌ها");if(!ps.ok||!sd.success)throw Error(sd.error||"خطا در فیش‌ها");setPeriods(Array.isArray(pd.data)?pd.data:[]);setPayslips(Array.isArray(sd.data)?sd.data:[]);const q=new URLSearchParams(window.location.search).get("ids"),requested=idsFrom(q),available=(sd.data||[]).filter(x=>requested.includes(Number(x.id))).map(x=>Number(x.id));if(requested.length&&available.length){setSelected(available);setPreview((sd.data||[]).filter(x=>available.includes(Number(x.id))))}else{setSelected([]);setPreview([])}}catch(e){setPeriods([]);setPayslips([]);setSelected([]);setPreview([]);setError(e.message||"خطا در دریافت اطلاعات")}finally{setLoadingData(false)}}
+  async function fetchAllPayslips(companyIdValue) {
+    const all = [];
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const response = await fetch(`/api/payslips?company_id=${encodeURIComponent(companyIdValue)}&page=${page}&page_size=50`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw Error(data.error || "خطا در دریافت فیش‌ها");
+      all.push(...(Array.isArray(data.data) ? data.data : []));
+      totalPages = Math.max(1, Number(data.meta?.total_pages || 1));
+      page += 1;
+    } while (page <= totalPages);
+    return all;
+  }
+
+  async function loadCompanyData(id){if(!id){setPeriods([]);setPeriodId("");setPayslips([]);setSelected([]);return;}setLoadingData(true);setError("");try{const periodsResponse=await fetch(`/api/payroll-periods?company_id=${encodeURIComponent(id)}`,{cache:"no-store"});const payslipData=await fetchAllPayslips(id);const periodData=await periodsResponse.json();if(!periodsResponse.ok||!periodData.success)throw Error(periodData.error||"خطا در دوره‌ها");setPeriods(Array.isArray(periodData.data)?periodData.data:[]);setPayslips(payslipData);const q=new URLSearchParams(window.location.search).get("ids"),requested=idsFrom(q),available=(payslipData||[]).filter(x=>requested.includes(Number(x.id))).map(x=>Number(x.id));if(requested.length&&available.length){setSelected(available);setPreview((payslipData||[]).filter(x=>available.includes(Number(x.id))))}else{setSelected([]);setPreview([])}}catch(e){setPeriods([]);setPeriodId("");setPayslips([]);setSelected([]);setPreview([]);setError(e.message||"خطا در دریافت اطلاعات")}finally{setLoadingData(false)}}
+
   useEffect(()=>{loadCompanies()},[]);useEffect(()=>{loadCompanyData(companyId)},[companyId]);
   function toggle(id){setSelected(old=>old.includes(id)?old.filter(x=>x!==id):[...old,id]);setPreview([])}
   function selectAll(){const ids=filtered.map(x=>Number(x.id));setSelected(selected.length===ids.length&&ids.length?[]:ids);setPreview([])}
