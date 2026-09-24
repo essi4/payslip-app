@@ -101,7 +101,7 @@ export async function GET(request) {
       company: companyResult.rows[0],
       data: result.rows,
       meta: {
-        page,
+        page: safePage,
         page_size: pageSize,
         total,
         total_pages: Math.max(1, Math.ceil(total / pageSize)),
