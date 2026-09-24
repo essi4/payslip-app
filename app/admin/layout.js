@@ -4,6 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+const MOBILE_PRIMARY_HREFS = new Set([
+  "/admin",
+  "/admin/employees",
+  "/admin/companies",
+  "/admin/payslips",
+  "/admin/reports",
+]);
+
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,22 +46,15 @@ export default function AdminLayout({ children }) {
     return activeHref === item.href;
   }
 
-  const mobilePrimaryHrefs = new Set([
-    "/admin",
-    "/admin/employees",
-    "/admin/companies",
-    "/admin/payslips",
-    "/admin/reports",
-  ]);
   const mobilePrimaryItems = menuItems.filter((item) =>
-    mobilePrimaryHrefs.has(item.href)
+    MOBILE_PRIMARY_HREFS.has(item.href)
   );
   const mobileMoreItems = menuItems.filter(
     (item) => !mobilePrimaryHrefs.has(item.href)
   );
 
   useEffect(() => {
-    if (!mobilePrimaryHrefs.has(activeHref)) {
+    if (!MOBILE_PRIMARY_HREFS.has(activeHref)) {
       setMobileMenuOpen(true);
     }
   }, [activeHref]);
