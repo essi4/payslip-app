@@ -1,0 +1,43 @@
+name: Verify Next 15 Migration
+
+on:
+  push:
+    branches:
+      - security/next-15-5-26
+      - main
+  workflow_dispatch:
+
+jobs:
+  next-15-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout commit under verification
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Clean install from committed lockfile
+        run: npm ci --ignore-scripts
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Verify top-level production dependency tree
+        run: npm ls --depth=0 --omit=dev
+
+      - name: Compare full test suite with main baseline
+        run: node scripts/next15-test-baseline.mjs
+
+      - name: Production build
+        run: npm run build

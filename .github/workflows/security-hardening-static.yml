@@ -1,0 +1,20 @@
+name: Security Hardening Static Regression
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  static-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate dependency lock
+        run: npm ci --ignore-scripts
+
+      - name: Run security hardening regression
+        run: node scripts/security-hardening-static.mjs

@@ -9,7 +9,8 @@ export async function GET(request, { params }) {
   if (authError) return authError;
 
   try {
-    const id = Number(params?.id);
+    const resolvedParams = await params;
+    const id = Number(resolvedParams?.id);
     if (!Number.isInteger(id) || id <= 0) {
       return NextResponse.json({ success: false, error: "شناسه فیش نامعتبر است." }, { status: 400 });
     }
