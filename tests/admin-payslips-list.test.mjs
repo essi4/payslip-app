@@ -35,6 +35,8 @@ test("admin payslip list uses server pagination and loads full detail only for e
   assert.match(adminPage, /\/api\/payslips\/\$\{encodeURIComponent\(payslip\.id\)\}/);
   assert.match(api, /LIMIT \$\{limitIndex\} OFFSET \$\{offsetIndex\}/);
   assert.match(api, /COUNT\(\*\)::int AS total/);
+  assert.match(api, /const total = Number\(countResult\.rows\[0\]\?\.total \|\| 0\)/);
+  assert.match(api, /const total = Number\(countResult\.rows\[0\]\?\.total \|\| 0\)[\s\S]*const totalPages =/);
   assert.match(api, /total_pages/);
 });
 
