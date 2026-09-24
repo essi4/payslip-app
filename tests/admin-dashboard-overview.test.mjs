@@ -31,3 +31,11 @@ test("dashboard API exposes the company count used by the primary KPI", () => {
   assert.match(api, /const companiesResult = await pool\.query\("SELECT COUNT\(\*\)::int AS count FROM companies"\);/);
   assert.match(api, /companiesCount: Number\(companiesResult\.rows\[0\]\?\.count \|\| 0\)/);
 });
+
+
+test("dashboard connection indicator reflects loading, error, and success states", () => {
+  assert.match(page, /در حال بررسی اتصال/);
+  assert.match(page, /اتصال ناموفق/);
+  assert.match(page, /اتصال برقرار است/);
+  assert.match(page, /loading \? "bg-amber-400" : error \? "bg-rose-400" : "bg-emerald-400"/);
+});
