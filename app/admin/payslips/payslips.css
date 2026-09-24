@@ -61,6 +61,28 @@
 .submit-button:hover { transform:translateY(-1px); box-shadow:0 8px 18px rgba(22,163,74,.2); }
 .submit-button:disabled { background:#94a3b8; cursor:not-allowed; transform:none; }
 
+.payslip-list-filters { padding:20px 25px; }
+.payslip-filter-grid { display:grid; grid-template-columns:2fr repeat(4,1fr); gap:14px; }
+.payslip-filter-grid .form-group label { margin-bottom:6px; }
+.payslip-list-table { min-width:700px !important; }
+.payslip-list-table th:nth-child(1), .payslip-list-table td:nth-child(1) { width:52px; }
+.payslip-list-table th:nth-child(4), .payslip-list-table td:nth-child(4) { white-space:nowrap; }
+.employee-code { display:block; margin-top:4px; color:#94a3b8; font-size:11px; font-weight:600; }
+.payslip-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.action-edit, .action-delete { border:none; cursor:pointer; min-width:38px; height:38px; border-radius:9px; color:#fff; font-family:inherit; font-size:14px; }
+.action-edit { background:#f59e0b; }
+.action-delete { background:#ef4444; }
+.action-edit:hover, .action-delete:hover { filter:brightness(.96); }
+.payslip-pagination { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding:16px 20px 20px; border-top:1px solid #f1f5f9; }
+.pagination-summary { color:#64748b; font-size:12px; font-weight:700; }
+.pagination-controls { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.pagination-controls button, .pagination-controls span { min-width:38px; height:38px; border-radius:9px; border:1px solid #e2e8f0; background:#fff; color:#475569; display:inline-flex; align-items:center; justify-content:center; font-family:inherit; font-size:12px; font-weight:800; padding:0 10px; }
+.pagination-controls button { cursor:pointer; }
+.pagination-controls button:hover:not(:disabled) { background:#f8fafc; border-color:#cbd5e1; }
+.pagination-controls button:disabled { opacity:.45; cursor:not-allowed; }
+.pagination-controls button.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+.pagination-ellipsis { border-color:transparent !important; background:transparent !important; min-width:22px !important; padding:0 2px !important; }
+
 .table-card { overflow:hidden; }
 .table-header { padding:23px 25px 18px; margin:0; }
 .count-badge { padding:8px 13px; border-radius:10px; background:#eff6ff; color:#2563eb; font-size:12px; font-weight:700; }
@@ -130,6 +152,12 @@
   .net-summary strong { font-size:21px; }
   .form-actions { margin-top:16px; }
   .submit-button { width:100%; min-width:0; height:50px; }
+  .payslip-list-filters { padding:15px; }
+  .payslip-filter-grid { grid-template-columns:1fr; gap:11px; }
+  .payslip-pagination { align-items:stretch; padding:13px 15px 15px; }
+  .pagination-summary { width:100%; text-align:center; }
+  .pagination-controls { justify-content:center; width:100%; }
+  .pagination-controls button, .pagination-controls span { min-width:35px; height:35px; }
   .table-card { border-radius:16px; }
   .table-header { padding:17px 15px 13px; }
   .table-wrapper table { min-width:760px; }
