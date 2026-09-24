@@ -77,7 +77,9 @@ export async function GET(request) {
       values
     );
 
-    const offset = (page - 1) * pageSize;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const offset = (safePage - 1) * pageSize;
     const limitIndex = values.length + 1;
     const offsetIndex = values.length + 2;
     const result = await pool.query(
