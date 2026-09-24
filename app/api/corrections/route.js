@@ -36,16 +36,25 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const year = searchParams.get("year") || "";
-    const month = searchParams.get("month") || "";
+    const monthRaw = searchParams.get("month") || "";
+    const monthNumber = monthRaw ? normalizeMonth(monthRaw) : null;
+
+    if (monthRaw && !monthNumber) {
+      return NextResponse.json({ success: false, error: "ماه انتخاب‌شده نامعتبر است." }, { status: 400 });
+    }
     const values = [];
     let index = 1;
     let query = `SELECT p.id, p.personnel_id, p.payroll_period_id, p.year, p.month, p.bank_account, p.job_group, p.job_title, p.base_salary, p.overtime, p.bonus, p.housing_allowance, p.food_allowance, p.marriage_allowance, p.child_allowance, p.other_benefits, p.insurance, p.tax, p.other_deductions, p.net_salary, p.created_at, e.full_name, e.national_id, e.personnel_code, e.department, e.job_title AS employee_job_title, e.company_id, c.name AS company_name, pp.status AS period_status FROM payslips p LEFT JOIN personnel e ON p.personnel_id=e.id LEFT JOIN companies c ON e.company_id=c.id LEFT JOIN payroll_periods pp ON p.payroll_period_id=pp.id WHERE 1=1`;
     if (search.trim()) { query += ` AND (e.full_name ILIKE $${index} OR e.personnel_code ILIKE $${index} OR e.national_id ILIKE $${index})`; values.push(`%${search.trim()}%`); index++; }
-    if (year.trim()) { query += ` AND p.year=$${index}`; values.push(year.trim()); index++; }
-    if (month.trim()) { query += ` AND p.month=$${index}`; values.push(month.trim()); index++; }
+    if (year.trim()) { query += ` AND p.year=${index}`; values.push(Number(year)); index++; }
+    if (monthNumber) { query += ` AND p.month=${index}`; values.push(monthNumber); index++; }
     query += " ORDER BY p.id DESC";
     const result = await pool.query(query, values);
-    return NextResponse.json({ success: true, data: result.rows });
+    const data = result.rows.map((item) => ({
+      ...item,
+      month: PERSIAN_MONTHS[Number(item.month) - 1] || item.month,
+    }));
+    return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error("GET corrections error:", error);
     return NextResponse.json({ success: false, error: "خطا در دریافت اصلاحات" }, { status: 500 });

@@ -2,9 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+
+const MOBILE_PRIMARY_HREFS = new Set([
+  "/admin",
+  "/admin/employees",
+  "/admin/companies",
+  "/admin/payslips",
+  "/admin/reports",
+]);
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuItems = [
     { title: "داشبورد", href: "/admin", icon: "▦" },
@@ -22,10 +32,32 @@ export default function AdminLayout({ children }) {
     { title: "تنظیمات", href: "/admin/settings", icon: "⚙️" },
   ];
 
+  const activeHref =
+    menuItems
+      .filter((item) =>
+        item.href === "/admin"
+          ? pathname === item.href
+          : pathname.startsWith(`${item.href}/`)
+      )
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href ||
+    (pathname === "/admin" ? "/admin" : "");
+
   function isActive(item) {
-    if (item.href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(item.href);
+    return activeHref === item.href;
   }
+
+  const mobilePrimaryItems = menuItems.filter((item) =>
+    MOBILE_PRIMARY_HREFS.has(item.href)
+  );
+  const mobileMoreItems = menuItems.filter(
+    (item) => !mobilePrimaryHrefs.has(item.href)
+  );
+
+  useEffect(() => {
+    if (!MOBILE_PRIMARY_HREFS.has(activeHref)) {
+      setMobileMenuOpen(true);
+    }
+  }, [activeHref]);
 
   async function handleLogout() {
     try {
@@ -46,7 +78,7 @@ export default function AdminLayout({ children }) {
   return (
     <div dir="rtl" className="min-h-screen bg-slate-100 text-slate-800">
       <div className="flex min-h-screen">
-        <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 border-l border-slate-700 bg-slate-900 shadow-xl lg:block">
+        <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 flex-col border-l border-slate-700 bg-slate-900 shadow-xl lg:flex">
           <div className="flex h-20 items-center border-b border-slate-700 px-5">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-xl text-white shadow-lg">💼</div>
@@ -57,7 +89,7 @@ export default function AdminLayout({ children }) {
             </div>
           </div>
 
-          <nav className="px-3 py-5">
+          <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
             <div className="mb-3 px-3 text-[10px] font-bold text-slate-500">منوی اصلی</div>
             <div className="space-y-1.5">
               {menuItems.map((item) => {
@@ -81,7 +113,7 @@ export default function AdminLayout({ children }) {
             </div>
           </nav>
 
-          <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 p-4">
+          <div className="shrink-0 border-t border-slate-700 p-4">
             <div className="rounded-xl bg-slate-800 p-3">
               <div className="text-[11px] font-bold text-slate-400">وضعیت سامانه</div>
               <div className="mt-2 flex items-center gap-2">
@@ -118,15 +150,15 @@ export default function AdminLayout({ children }) {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {menuItems.map((item) => {
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {mobilePrimaryItems.map((item) => {
                 const active = isActive(item);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={[
-                      "flex items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-xs font-bold transition",
+                      "flex shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition",
                       active ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white",
                     ].join(" ")}
                   >
@@ -135,7 +167,38 @@ export default function AdminLayout({ children }) {
                   </Link>
                 );
               })}
+
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                aria-expanded={mobileMenuOpen}
+                className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-800 px-3 py-2.5 text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white"
+              >
+                <span>☰</span>
+                <span>{mobileMenuOpen ? "بستن منو" : "بیشتر"}</span>
+              </button>
             </div>
+
+            {mobileMenuOpen && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {mobileMoreItems.map((item) => {
+                  const active = isActive(item);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={[
+                        "flex items-center justify-center gap-2 rounded-xl px-2.5 py-2.5 text-xs font-bold transition",
+                        active ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white",
+                      ].join(" ")}
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <main>{children}</main>

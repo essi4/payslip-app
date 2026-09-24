@@ -638,10 +638,10 @@ export default function CorrectionsPage() {
                 همه ماه‌ها
               </option>
 
-              {months.map((item) => (
+              {months.map((item, index) => (
                 <option
                   key={item}
-                  value={item}
+                  value={String(index + 1)}
                 >
                   {item}
                 </option>

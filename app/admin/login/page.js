@@ -37,8 +37,6 @@ export default function LoginPage() {
 
       const result = await response.json();
 
-      console.log("LOGIN RESULT:", result);
-
       if (!response.ok || !result.success) {
         setError(
           result.error || "نام کاربری یا رمز عبور اشتباه است."

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/db";
 import { requireAdmin } from "../../lib/admin-auth";
+import { normalizePayslipMonth } from "../../lib/payslip-month";
 
 export const dynamic = "force-dynamic";
+
+const PERSIAN_MONTHS = [
+  "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+  "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
+];
 
 export async function GET(request) {
   const authError = requireAdmin(request);
@@ -11,9 +17,17 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const year = searchParams.get("year") || "";
-    const month = searchParams.get("month") || "";
+    const monthRaw = searchParams.get("month") || "";
     const personnelId = searchParams.get("personnel_id") || "";
     const companyId = searchParams.get("company_id") || "";
+    const monthNumber = monthRaw ? normalizePayslipMonth(monthRaw) : null;
+
+    if (monthRaw && !monthNumber) {
+      return NextResponse.json(
+        { success: false, error: "ماه انتخاب‌شده نامعتبر است." },
+        { status: 400 }
+      );
+    }
 
     if (!companyId || !Number(companyId)) {
       return NextResponse.json(
@@ -41,8 +55,8 @@ export async function GET(request) {
       conditions.push(sql.replace("?", `$${values.length}`));
     };
 
-    if (year) addCondition("p.year = ?", year);
-    if (month) addCondition("p.month = ?", month);
+    if (year) addCondition("p.year = ?", Number(year));
+    if (monthNumber) addCondition("p.month = ?", monthNumber);
     if (personnelId && Number(personnelId)) {
       addCondition("p.personnel_id = ?", Number(personnelId));
     }
@@ -90,7 +104,7 @@ export async function GET(request) {
       success: true,
       filters: {
         year,
-        month,
+        month: monthNumber ? PERSIAN_MONTHS[monthNumber - 1] : "",
         personnel_id: personnelId,
         company_id: companyId,
       },
@@ -107,7 +121,7 @@ export async function GET(request) {
         totalNetSalary: Number(summary.total_net_salary || 0),
         monthlyReports: monthlyResult.rows.map((item) => ({
           year: item.year,
-          month: item.month,
+          month: PERSIAN_MONTHS[Number(item.month) - 1] || item.month,
           payslipsCount: Number(item.payslips_count || 0),
           baseSalary: Number(item.base_salary || 0),
           benefits: Number(item.benefits || 0),
@@ -118,7 +132,7 @@ export async function GET(request) {
           id: item.id,
           personnel_id: item.personnel_id,
           year: item.year,
-          month: item.month,
+          month: PERSIAN_MONTHS[Number(item.month) - 1] || item.month,
           base_salary: Number(item.base_salary || 0),
           benefits: Number(item.benefits || 0),
           deductions: Number(item.deductions || 0),

@@ -58,3 +58,24 @@ test("each visible admin menu target has a corresponding page route", () => {
     );
   }
 });
+
+
+test("admin navigation highlights only the most specific matching route", () => {
+  assert.match(layout, /const activeHref =/);
+  assert.match(layout, /\.sort\(\(a, b\) => b\.href\.length - a\.href\.length\)/);
+  assert.match(layout, /return activeHref === item\.href/);
+});
+
+test("mobile admin navigation keeps primary links compact and secondary links behind more", () => {
+  assert.match(layout, /const mobilePrimaryHrefs = new Set\(/);
+  assert.match(layout, /const mobileMoreItems = menuItems\.filter\(/);
+  assert.match(layout, /aria-expanded=\{mobileMenuOpen\}/);
+  assert.match(layout, /بیشتر/);
+});
+
+
+test("desktop admin sidebar keeps a scrollable menu area above the fixed footer", () => {
+  assert.match(layout, /fixed right-0 top-0 z-40 hidden h-screen w-64 flex-col/);
+  assert.match(layout, /min-h-0 flex-1 overflow-y-auto/);
+  assert.match(layout, /shrink-0 border-t border-slate-700/);
+});

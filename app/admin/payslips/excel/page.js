@@ -30,16 +30,24 @@ export default function PayslipExcelPage() {
   async function loadCompanyData(id) {
     if (!id) { setEmployees([]); setExistingPayslips([]); return; }
     try {
-      const [employeeResponse, payslipResponse] = await Promise.all([
-        fetch(`/api/personnel?company_id=${encodeURIComponent(id)}`, { cache: "no-store" }),
-        fetch(`/api/payslips?company_id=${encodeURIComponent(id)}`, { cache: "no-store" }),
-      ]);
+      const employeeResponse = await fetch(`/api/personnel?company_id=${encodeURIComponent(id)}`, { cache: "no-store" });
       const employeeData = await employeeResponse.json();
-      const payslipData = await payslipResponse.json();
       if (!employeeResponse.ok || !employeeData.success) throw new Error(employeeData.error || "خطا در دریافت کارکنان");
-      if (!payslipResponse.ok || !payslipData.success) throw new Error(payslipData.error || "خطا در دریافت فیش‌ها");
+
+      const allPayslips = [];
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const payslipResponse = await fetch(`/api/payslips?company_id=${encodeURIComponent(id)}&page=${page}&page_size=50`, { cache: "no-store" });
+        const payslipData = await payslipResponse.json();
+        if (!payslipResponse.ok || !payslipData.success) throw new Error(payslipData.error || "خطا در دریافت فیش‌ها");
+        allPayslips.push(...(Array.isArray(payslipData.data) ? payslipData.data : []));
+        totalPages = Math.max(1, Number(payslipData.meta?.total_pages || 1));
+        page += 1;
+      } while (page <= totalPages);
+
       setEmployees(Array.isArray(employeeData.data) ? employeeData.data : []);
-      setExistingPayslips(Array.isArray(payslipData.data) ? payslipData.data : []);
+      setExistingPayslips(allPayslips);
     } catch (err) { setError(err.message || "خطا در دریافت اطلاعات شرکت"); }
   }
 

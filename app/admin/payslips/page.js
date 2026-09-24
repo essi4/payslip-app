@@ -6,6 +6,7 @@ import { calculatePayroll1405, daysInPersianMonth } from "../../lib/payroll-1405
 
 const MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 const DISPLAY_CURRENCY = "ریال";
+const PAGE_SIZE = 20;
 const EMPTY_FORM = {
   personnel_id: "", year: "1405", month: "فروردین", bank_account: "", job_group: "", job_title: "",
   work_days: "31", mission_days: "0", mission_hours: "0", seniority_eligible: false,
@@ -16,6 +17,14 @@ const EMPTY_FORM = {
 const number = (value) => { const n = Number(value); return Number.isFinite(n) ? n : 0; };
 const fa = (value) => number(value).toLocaleString("fa-IR");
 
+const paymentMonth = (value) => {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= MONTHS.length ? MONTHS[n - 1] : value || "---";
+};
+const formatYear = (value) => String(value ?? "")
+  .replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)])
+  .replace(/[٠-٩]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"["٠١٢٣٤٥٦٧٨٩".indexOf(digit)]);
+
 export default function PayslipsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [companies, setCompanies] = useState([]), [companyId, setCompanyId] = useState("");
@@ -23,9 +32,13 @@ export default function PayslipsPage() {
   const [loading, setLoading] = useState(true), [companiesLoading, setCompaniesLoading] = useState(true), [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null), [error, setError] = useState("");
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [payslipMeta, setPayslipMeta] = useState({ page: 1, page_size: PAGE_SIZE, total: 0, total_pages: 1, total_net: 0 });
+  const [listFilters, setListFilters] = useState({ q: "", year: "", month: "", jobGroup: "", status: "all" });
+  const [listPage, setListPage] = useState(1);
 
   const selectedCompany = useMemo(() => companies.find((c) => String(c.id) === String(companyId)), [companies, companyId]);
   const companyEmployees = useMemo(() => employees.filter((e) => Number(e.company_id) === Number(companyId)), [employees, companyId]);
+  const jobGroups = useMemo(() => [...new Set(companyEmployees.map((e) => String(e.job_group || "").trim()).filter(Boolean))].sort((a, b) => number(a) - number(b)), [companyEmployees]);
   const selectedEmployee = useMemo(() => companyEmployees.find((e) => String(e.id) === String(form.personnel_id)), [companyEmployees, form.personnel_id]);
 
   const calculation = useMemo(() => calculatePayroll1405({
@@ -49,29 +62,49 @@ export default function PayslipsPage() {
   }
 
   async function loadData() {
-    if (!companyId) { setEmployees([]); setPayslips([]); setLoading(false); return; }
+    if (!companyId) {
+      setEmployees([]); setPayslips([]);
+      setPayslipMeta({ page: 1, page_size: PAGE_SIZE, total: 0, total_pages: 1, total_net: 0 });
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true); setError("");
+      const payslipParams = new URLSearchParams({
+        company_id: String(companyId),
+        page: String(listPage),
+        page_size: String(PAGE_SIZE),
+      });
+      if (listFilters.q.trim()) payslipParams.set("q", listFilters.q.trim());
+      if (listFilters.year) payslipParams.set("year", listFilters.year);
+      if (listFilters.month) payslipParams.set("month", listFilters.month);
+      if (listFilters.jobGroup) payslipParams.set("job_group", listFilters.jobGroup);
+      if (listFilters.status !== "all") payslipParams.set("status", listFilters.status);
+
       const [empRes, payRes] = await Promise.all([
         fetch(`/api/personnel?company_id=${encodeURIComponent(companyId)}`, { cache: "no-store" }),
-        fetch(`/api/payslips?company_id=${encodeURIComponent(companyId)}`, { cache: "no-store" }),
+        fetch(`/api/payslips?${payslipParams.toString()}`, { cache: "no-store" }),
       ]);
       const [empData, payData] = await Promise.all([empRes.json(), payRes.json()]);
       if (!empRes.ok || !empData.success) throw new Error(empData.error || "خطا در دریافت کارکنان");
       if (!payRes.ok || !payData.success) throw new Error(payData.error || "خطا در دریافت فیش‌ها");
       setEmployees(Array.isArray(empData.data) ? empData.data : []);
       setPayslips(Array.isArray(payData.data) ? payData.data : []);
-    } catch (err) { setEmployees([]); setPayslips([]); setError(err.message || "خطا در دریافت اطلاعات"); }
-    finally { setLoading(false); }
+      setPayslipMeta({ page: payData.meta?.page || listPage, page_size: payData.meta?.page_size || PAGE_SIZE, total: Number(payData.meta?.total || 0), total_pages: Number(payData.meta?.total_pages || 1), total_net: payData.meta?.total_net || 0 });
+    } catch (err) {
+      setEmployees([]); setPayslips([]);
+      setPayslipMeta({ page: 1, page_size: PAGE_SIZE, total: 0, total_pages: 1, total_net: 0 });
+      setError(err.message || "خطا در دریافت اطلاعات");
+    } finally { setLoading(false); }
   }
 
   useEffect(() => { setIsMounted(true); loadCompanies(); }, []);
-  useEffect(() => { if (!companiesLoading) loadData(); }, [companyId, companiesLoading]);
+  useEffect(() => { if (!companiesLoading) loadData(); }, [companyId, companiesLoading, listPage, listFilters]);
 
   function updateForm(field, value) { setForm((previous) => ({ ...previous, [field]: value })); }
   function resetForm() { setForm({ ...EMPTY_FORM, work_days: String(daysInPersianMonth(1405, 1)) }); setEditingId(null); }
 
-  function handleCompanyChange(value) { if (editingId !== null) resetForm(); setCompanyId(value); }
+  function handleCompanyChange(value) { if (editingId !== null) resetForm(); setListPage(1); setListFilters({ q: "", year: "", month: "", jobGroup: "", status: "all" }); setCompanyId(value); }
 
   function handleMonthChange(month) {
     const monthNumber = MONTHS.indexOf(month) + 1;
@@ -113,17 +146,48 @@ export default function PayslipsPage() {
     finally { setSaving(false); }
   }
 
-  function handleEdit(payslip) {
-    setEditingId(payslip.id);
-    setForm({
-      personnel_id: String(payslip.personnel_id || ""), year: payslip.year || "1405", month: payslip.month || "فروردین",
-      bank_account: payslip.bank_account || "", job_group: String(payslip.job_group || ""), job_title: payslip.job_title || "",
-      work_days: String(payslip.work_days || 30), mission_days: String(payslip.mission_days || 0), mission_hours: String(payslip.mission_hours || 0),
-      seniority_eligible: Boolean(payslip.seniority_eligible), overtime: String(payslip.overtime || ""), bonus: String(payslip.bonus || ""),
-      housing_allowance: String(payslip.housing_allowance || ""), food_allowance: String(payslip.food_allowance || ""), marriage_allowance: String(payslip.marriage_allowance || ""),
-      child_allowance: String(payslip.child_allowance || ""), other_benefits: String(payslip.other_benefits || ""), other_deductions: String(payslip.other_deductions || ""),
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  async function handleEdit(payslip) {
+    try {
+      setError("");
+      const response = await fetch(`/api/payslips/${encodeURIComponent(payslip.id)}`, { cache: "no-store" });
+      const result = await response.json();
+      const detail = Array.isArray(result.data) ? result.data[0] : result.data;
+      if (!response.ok || !result.success || !detail) throw new Error(result.error || "خطا در دریافت جزئیات فیش");
+      setEditingId(detail.id);
+      setForm({
+        personnel_id: String(detail.personnel_id || ""), year: detail.year || "1405", month: paymentMonth(detail.month) || "فروردین",
+        bank_account: detail.bank_account || "", job_group: String(detail.job_group || ""), job_title: detail.job_title || "",
+        work_days: String(detail.work_days || 30), mission_days: String(detail.mission_days || 0), mission_hours: String(detail.mission_hours || 0),
+        seniority_eligible: Boolean(detail.seniority_eligible), overtime: String(detail.overtime || ""), bonus: String(detail.bonus || ""),
+        housing_allowance: String(detail.housing_allowance || ""), food_allowance: String(detail.food_allowance || ""), marriage_allowance: String(detail.marriage_allowance || ""),
+        child_allowance: String(detail.child_allowance || ""), other_benefits: String(detail.other_benefits || ""), other_deductions: String(detail.other_deductions || ""),
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) { setError(err.message || "خطا در دریافت جزئیات فیش"); }
+  }
+
+  function updateListFilter(field, value) {
+    setListFilters((current) => ({ ...current, [field]: value }));
+    setListPage(1);
+  }
+
+  function resetListFilters() {
+    setListFilters({ q: "", year: "", month: "", jobGroup: "", status: "all" });
+    setListPage(1);
+  }
+
+  function goToPage(page) {
+    setListPage(Math.min(Math.max(1, page), Math.max(1, payslipMeta.total_pages)));
+  }
+
+  function paginationItems(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
+    const items = [1];
+    if (current > 4) items.push("ellipsis-start");
+    for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p += 1) items.push(p);
+    if (current < total - 3) items.push("ellipsis-end");
+    items.push(total);
+    return [...new Set(items)];
   }
 
   async function handleDelete(id) {
@@ -153,10 +217,10 @@ export default function PayslipsPage() {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card"><div className="stat-icon blue">📄</div><div><span>کل فیش‌ها</span><strong>{fa(payslips.length)}</strong></div></div>
+        <div className="stat-card"><div className="stat-icon blue">📄</div><div><span>کل فیش‌ها</span><strong>{fa(payslipMeta.total)}</strong></div></div>
         <div className="stat-card"><div className="stat-icon green">👥</div><div><span>کارکنان شرکت</span><strong>{fa(companyEmployees.length)}</strong></div></div>
-        <div className="stat-card"><div className="stat-icon orange">💵</div><div><span>مجموع خالص پرداختی</span><strong>{fa(payslips.reduce((sum, item) => sum + number(item.net_salary), 0))}</strong><small>{DISPLAY_CURRENCY}</small></div></div>
-        <div className="stat-card"><div className="stat-icon purple">📅</div><div><span>دوره</span><strong>{form.year}</strong><small>{form.month}</small></div></div>
+        <div className="stat-card"><div className="stat-icon orange">💵</div><div><span>مجموع خالص پرداختی</span><strong>{fa(payslipMeta.total_net)}</strong><small>{DISPLAY_CURRENCY}</small></div></div>
+        <div className="stat-card"><div className="stat-icon purple">📅</div><div><span>ماه پرداخت</span><strong>{form.month}</strong><small>{form.year}</small></div></div>
       </div>
 
       <div className="form-card">
@@ -205,9 +269,63 @@ export default function PayslipsPage() {
         </form>
       </div>
 
-      <div className="table-card"><div className="section-header table-header"><div><h2>فیش‌های صادرشده</h2><p>نتیجه نهایی پس از محاسبه کامل حقوق</p></div><span className="count-badge">{fa(payslips.length)} فیش</span></div>
+      <div className="payslip-list-filters form-card">
+        <div className="section-header" style={{ marginBottom: 16 }}><div><h2>🔎 فیلتر فیش‌ها</h2><p>برای شرکت فعال جستجو، ماه، گروه و وضعیت دوره را محدود کنید.</p></div><button type="button" onClick={resetListFilters} className="back-button" style={{ minHeight: 40 }}>پاک‌کردن فیلترها</button></div>
+        <div className="payslip-filter-grid">
+          <div className="form-group"><label>جستجوی نام / کد / شماره فیش</label><input value={listFilters.q} onChange={(e) => updateListFilter("q", e.target.value)} placeholder="مثلاً اسماعیل احمدی" /></div>
+          <div className="form-group"><label>سال پرداخت</label><select value={listFilters.year} onChange={(e) => updateListFilter("year", e.target.value)}><option value="">همه سال‌ها</option><option value="1405">۱۴۰۵</option></select></div>
+          <div className="form-group"><label>ماه پرداخت</label><select value={listFilters.month} onChange={(e) => updateListFilter("month", e.target.value)}><option value="">همه ماه‌ها</option>{MONTHS.map((month) => <option key={month} value={month}>{month}</option>)}</select></div>
+          <div className="form-group"><label>گروه</label><select value={listFilters.jobGroup} onChange={(e) => updateListFilter("jobGroup", e.target.value)}><option value="">همه گروه‌ها</option>{jobGroups.map((group) => <option key={group} value={group}>{group}</option>)}</select></div>
+          <div className="form-group"><label>وضعیت دوره</label><select value={listFilters.status} onChange={(e) => updateListFilter("status", e.target.value)}><option value="all">همه</option><option value="open">باز</option><option value="closed">بسته</option></select></div>
+        </div>
+      </div>
+
+      <div className="table-card">
+        <div className="section-header table-header">
+          <div><h2>فیش‌های صادرشده</h2><p>نمایش مدیریتی فیش‌ها؛ جزئیات مالی داخل صفحه مشاهده فیش است.</p></div>
+          <span className="count-badge">{fa(payslipMeta.total)} فیش</span>
+        </div>
         {error && <div style={{ margin: "0 20px 16px", padding: 12, borderRadius: 10, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}
-        <div className="table-wrapper"><table><thead><tr><th>#</th><th>کارمند</th><th>گروه</th><th>دوره</th><th>روز کارکرد</th><th>حقوق پایه</th><th>بیمه</th><th>مالیات</th><th>خالص</th><th>عملیات</th></tr></thead><tbody>{payslips.length === 0 ? <tr><td colSpan="10" className="empty-cell">برای این شرکت هنوز فیشی صادر نشده است.</td></tr> : payslips.map((p, index) => <tr key={p.id}><td>{index + 1}</td><td className="employee-name">{p.full_name || "نامشخص"}</td><td>{p.job_group || "---"}</td><td>{p.month} {p.year}</td><td>{fa(p.work_days)}</td><td>{fa(p.base_salary)} {DISPLAY_CURRENCY}</td><td>{fa(p.insurance)} {DISPLAY_CURRENCY}</td><td>{fa(p.tax)} {DISPLAY_CURRENCY}</td><td className="net-value">{fa(p.net_salary)} {DISPLAY_CURRENCY}</td><td><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><a href={`/admin/payslips/${p.id}`} className="view-button">👁 مشاهده</a><button type="button" onClick={() => handleEdit(p)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#f59e0b", color: "#fff" }}>✏️</button><button type="button" onClick={() => handleDelete(p.id)} style={{ border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: "#ef4444", color: "#fff" }}>🗑</button></div></td></tr>)}</tbody></table></div>
+        <div className="table-wrapper">
+          <table className="payslip-list-table">
+            <thead><tr><th>#</th><th>کارمند</th><th>گروه</th><th>ماه پرداخت</th><th>روز کارکرد</th><th>خالص</th><th>عملیات</th></tr></thead>
+            <tbody>
+              {payslips.length === 0 ? (
+                <tr><td colSpan="7" className="empty-cell">برای این فیلتر فیشی پیدا نشد.</td></tr>
+              ) : payslips.map((p, index) => (
+                <tr key={p.id}>
+                  <td>{fa((payslipMeta.page - 1) * payslipMeta.page_size + index + 1)}</td>
+                  <td className="employee-name"><span>{p.full_name || "نامشخص"}</span>{p.personnel_code && <small className="employee-code">{p.personnel_code}</small>}</td>
+                  <td>{p.job_group || "---"}</td>
+                  <td><strong>{paymentMonth(p.month)} {formatYear(p.year)}</strong></td>
+                  <td>{fa(p.work_days)}</td>
+                  <td className="net-value">{fa(p.net_salary)} {DISPLAY_CURRENCY}</td>
+                  <td>
+                    <div className="payslip-actions">
+                      <a href={`/admin/payslips/${p.id}`} className="view-button">👁 مشاهده</a>
+                      <button type="button" title="ویرایش" aria-label="ویرایش" onClick={() => handleEdit(p)} className="action-edit">✏️</button>
+                      <button type="button" title="حذف" aria-label="حذف" onClick={() => handleDelete(p.id)} className="action-delete">🗑</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {payslipMeta.total > 0 && (
+          <div className="payslip-pagination">
+            <div className="pagination-summary">{fa(payslipMeta.total)} فیش — صفحه {fa(payslipMeta.page)} از {fa(payslipMeta.total_pages)}</div>
+            <div className="pagination-controls">
+              <button type="button" onClick={() => goToPage(listPage - 1)} disabled={listPage <= 1}>◀ قبلی</button>
+              {paginationItems(listPage, payslipMeta.total_pages).map((item) => item.toString().startsWith("ellipsis") ? (
+                <span key={item} className="pagination-ellipsis">…</span>
+              ) : (
+                <button type="button" key={item} onClick={() => goToPage(item)} className={item === listPage ? "active" : ""}>{fa(item)}</button>
+              ))}
+              <button type="button" onClick={() => goToPage(listPage + 1)} disabled={listPage >= payslipMeta.total_pages}>بعدی ▶</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

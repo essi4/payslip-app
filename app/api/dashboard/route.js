@@ -9,6 +9,7 @@ export async function GET(request) {
   if (authError) return authError;
 
   try {
+    const companiesResult = await pool.query("SELECT COUNT(*)::int AS count FROM companies");
     const employeesResult = await pool.query("SELECT COUNT(*)::int AS count FROM personnel");
     const payslipsResult = await pool.query("SELECT COUNT(*)::int AS count FROM payslips");
     const salaryResult = await pool.query(`
@@ -35,6 +36,7 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       data: {
+        companiesCount: Number(companiesResult.rows[0]?.count || 0),
         employeesCount: Number(employeesResult.rows[0]?.count || 0),
         payslipsCount: Number(payslipsResult.rows[0]?.count || 0),
         totalBaseSalary: Number(salary.total_base_salary || 0),
