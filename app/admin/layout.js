@@ -50,7 +50,7 @@ export default function AdminLayout({ children }) {
     MOBILE_PRIMARY_HREFS.has(item.href)
   );
   const mobileMoreItems = menuItems.filter(
-    (item) => !mobilePrimaryHrefs.has(item.href)
+    (item) => !MOBILE_PRIMARY_HREFS.has(item.href)
   );
 
   useEffect(() => {
