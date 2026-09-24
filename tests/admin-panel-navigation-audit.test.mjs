@@ -58,3 +58,17 @@ test("each visible admin menu target has a corresponding page route", () => {
     );
   }
 });
+
+
+test("admin navigation highlights only the most specific matching route", () => {
+  assert.match(layout, /const activeHref =/);
+  assert.match(layout, /\.sort\(\(a, b\) => b\.href\.length - a\.href\.length\)/);
+  assert.match(layout, /return activeHref === item\.href/);
+});
+
+test("mobile admin navigation keeps primary links compact and secondary links behind more", () => {
+  assert.match(layout, /const mobilePrimaryHrefs = new Set\(/);
+  assert.match(layout, /const mobileMoreItems = menuItems\.filter\(/);
+  assert.match(layout, /aria-expanded=\{mobileMenuOpen\}/);
+  assert.match(layout, /بیشتر/);
+});
