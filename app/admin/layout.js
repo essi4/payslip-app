@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuItems = [
     { title: "داشبورد", href: "/admin", icon: "▦" },
@@ -22,10 +24,39 @@ export default function AdminLayout({ children }) {
     { title: "تنظیمات", href: "/admin/settings", icon: "⚙️" },
   ];
 
+  const activeHref =
+    menuItems
+      .filter((item) =>
+        item.href === "/admin"
+          ? pathname === item.href
+          : pathname.startsWith(`${item.href}/`)
+      )
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href ||
+    (pathname === "/admin" ? "/admin" : "");
+
   function isActive(item) {
-    if (item.href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(item.href);
+    return activeHref === item.href;
   }
+
+  const mobilePrimaryHrefs = new Set([
+    "/admin",
+    "/admin/employees",
+    "/admin/companies",
+    "/admin/payslips",
+    "/admin/reports",
+  ]);
+  const mobilePrimaryItems = menuItems.filter((item) =>
+    mobilePrimaryHrefs.has(item.href)
+  );
+  const mobileMoreItems = menuItems.filter(
+    (item) => !mobilePrimaryHrefs.has(item.href)
+  );
+
+  useEffect(() => {
+    if (!mobilePrimaryHrefs.has(activeHref)) {
+      setMobileMenuOpen(true);
+    }
+  }, [activeHref]);
 
   async function handleLogout() {
     try {
@@ -118,15 +149,15 @@ export default function AdminLayout({ children }) {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {menuItems.map((item) => {
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {mobilePrimaryItems.map((item) => {
                 const active = isActive(item);
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={[
-                      "flex items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-xs font-bold transition",
+                      "flex shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition",
                       active ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white",
                     ].join(" ")}
                   >
@@ -135,7 +166,38 @@ export default function AdminLayout({ children }) {
                   </Link>
                 );
               })}
+
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                aria-expanded={mobileMenuOpen}
+                className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-800 px-3 py-2.5 text-xs font-bold text-slate-300 transition hover:bg-slate-700 hover:text-white"
+              >
+                <span>☰</span>
+                <span>{mobileMenuOpen ? "بستن منو" : "بیشتر"}</span>
+              </button>
             </div>
+
+            {mobileMenuOpen && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {mobileMoreItems.map((item) => {
+                  const active = isActive(item);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={[
+                        "flex items-center justify-center gap-2 rounded-xl px-2.5 py-2.5 text-xs font-bold transition",
+                        active ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white",
+                      ].join(" ")}
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <main>{children}</main>
