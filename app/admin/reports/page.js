@@ -221,7 +221,9 @@ export default function ReportsPage() {
               <label className="mb-2 block font-medium">ماه</label>
               <select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full rounded-lg border p-3">
                 <option value="">همه ماه‌ها</option>
-                {months.map((item) => <option key={item} value={item}>{item}</option>)}
+                {months.map((item, index) => (
+                  <option key={item} value={String(index + 1)}>{item}</option>
+                ))}
               </select>
             </div>
           </div>
