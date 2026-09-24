@@ -21,12 +21,9 @@ const paymentMonth = (value) => {
   const n = Number(value);
   return Number.isInteger(n) && n >= 1 && n <= MONTHS.length ? MONTHS[n - 1] : value || "---";
 };
-const formatYear = (value) => String(value ?? "").replace(/[٠-٩۰-۹]/g, (digit) => {
-  const faDigits = "۰۱۲۳۴۵۶۷۸۹";
-  const arDigits = "٠١٢٣٤٥٦٧٨٩";
-  const normalized = arDigits.includes(digit) ? faDigits[arDigits.indexOf(digit)] : digit;
-  return normalized;
-});
+const formatYear = (value) => String(value ?? "")
+  .replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)])
+  .replace(/[٠-٩]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"["٠١٢٣٤٥٦٧٨٩".indexOf(digit)]);
 
 export default function PayslipsPage() {
   const [isMounted, setIsMounted] = useState(false);
