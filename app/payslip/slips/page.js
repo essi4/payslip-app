@@ -128,10 +128,6 @@ export default function EmployeePayslipsPage() {
       : formatLabel(p.year);
     const payMonthNumber = Number(p.month);
     const payMonth = jalaliMonths[payMonthNumber - 1] || formatLabel(p.month);
-    const payPeriodNumber = Number(p.period ?? p.pay_period ?? p.month);
-    const payPeriod = Number.isFinite(payPeriodNumber) && payPeriodNumber > 0
-      ? formatPeriod(payPeriodNumber)
-      : formatLabel(p.period ?? p.pay_period ?? p.month);
     const employeeDetails = [
       ["نام و نام خانوادگی", p.full_name, "👤"], ["کد پرسنلی", p.personnel_code, "🪪"],
       ["عنوان شغلی", p.job_title || p.employee_job_title, "💼"], ["گروه مزدی", p.job_group, "🏷️"],
