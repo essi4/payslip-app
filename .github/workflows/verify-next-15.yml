@@ -2,7 +2,9 @@ name: Verify Next 15 Migration
 
 on:
   push:
-    branches: [security/next-15-5-26]
+    branches:
+      - security/next-15-5-26
+      - main
   workflow_dispatch:
 
 jobs:
@@ -10,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Checkout migration branch
+      - name: Checkout commit under verification
         uses: actions/checkout@v4
         with:
-          ref: security/next-15-5-26
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
