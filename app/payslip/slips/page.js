@@ -19,10 +19,6 @@ function formatYear(value) {
   return toPersianDigits(value);
 }
 
-function formatPeriod(value) {
-  return toPersianDigits(value);
-}
-
 function rial(value) {
   return `${formatMoney(value)} ریال`;
 }
