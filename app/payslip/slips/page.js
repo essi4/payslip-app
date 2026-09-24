@@ -167,8 +167,8 @@ export default function EmployeePayslipsPage() {
                       <strong>{payMonth}</strong>
                     </div>
                     <div className="period-item">
-                      <span className="period-label">دوره حقوق</span>
-                      <strong>دوره {payPeriod}</strong>
+                      <span className="period-label">ماه پرداخت</span>
+                      <strong>{payMonth}</strong>
                     </div>
                   </div>
                   <p className="mt-2 text-xs font-bold text-slate-300 sm:text-sm">{formatLabel(p.full_name)} • کد پرسنلی {formatLabel(p.personnel_code)}</p>
