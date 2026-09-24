@@ -23,12 +23,89 @@ export async function GET(request) {
   const authError = requireAdmin(request); if (authError) return authError;
   try {
     await ensurePayslipColumns();
-    const companyId = Number(new URL(request.url).searchParams.get("company_id"));
+    const params = new URL(request.url).searchParams;
+    const companyId = Number(params.get("company_id"));
     if (!Number.isInteger(companyId) || companyId <= 0) return NextResponse.json({ success: false, error: "انتخاب شرکت برای مشاهده فیش‌ها الزامی است." }, { status: 400 });
-    const companyResult = await pool.query(`SELECT id, name FROM companies WHERE id=$1 LIMIT 1`, [companyId]);
+
+    const companyResult = await pool.query("SELECT id, name FROM companies WHERE id=$1 LIMIT 1", [companyId]);
     if (!companyResult.rows.length) return NextResponse.json({ success: false, error: "شرکت انتخاب‌شده پیدا نشد." }, { status: 404 });
-    const result = await pool.query(`SELECT p.id,p.personnel_id,p.payroll_period_id,p.year,p.month,p.bank_account,p.job_group,p.job_title,p.base_salary,p.overtime,p.bonus,p.seniority_allowance,p.past_seniority_allowance,p.mission_allowance,p.work_days,p.mission_days,p.mission_hours,p.seniority_eligible,p.housing_allowance,p.food_allowance,p.marriage_allowance,p.child_allowance,p.other_benefits,p.insurance,p.tax,p.other_deductions,p.net_salary,p.created_at,e.full_name,e.personnel_code,e.national_id,e.department,e.job_title AS employee_job_title,e.company_id,c.name AS company_name,pp.status AS period_status FROM payslips p JOIN personnel e ON p.personnel_id=e.id LEFT JOIN companies c ON e.company_id=c.id LEFT JOIN payroll_periods pp ON p.payroll_period_id=pp.id WHERE e.company_id=$1 ORDER BY p.id DESC`, [companyId]);
-    return NextResponse.json({ success: true, company: companyResult.rows[0], data: result.rows });
+
+    const page = Math.max(1, Number.parseInt(params.get("page") || "1", 10) || 1);
+    const pageSize = Math.min(50, Math.max(1, Number.parseInt(params.get("page_size") || "20", 10) || 20));
+    const search = String(params.get("q") || "").trim();
+    const yearParam = String(params.get("year") || "").trim();
+    const monthParam = String(params.get("month") || "").trim();
+    const groupParam = String(params.get("job_group") || "").trim();
+    const statusParam = String(params.get("status") || "all").trim();
+
+    const where = ["e.company_id=$1"];
+    const values = [companyId];
+    const add = (sql, value) => { values.push(value); where.push(sql.replace("?", `$\${values.length}`)); };
+
+    if (search) add("(e.full_name ILIKE ? OR e.personnel_code ILIKE ? OR CAST(p.id AS TEXT) ILIKE ?)", `%\${search}%`);
+    if (search) {
+      const n = values.length;
+      where[where.length - 1] = `(e.full_name ILIKE $\${n} OR e.personnel_code ILIKE $\${n} OR CAST(p.id AS TEXT) ILIKE $\${n})`;
+    }
+
+    if (yearParam) {
+      const year = Number(yearParam);
+      if (!Number.isInteger(year)) return NextResponse.json({ success: false, error: "سال پرداخت نامعتبر است." }, { status: 400 });
+      add("p.year=?", year);
+    }
+
+    if (monthParam) {
+      const monthNumber = normalizePayslipMonth(monthParam);
+      if (!monthNumber) return NextResponse.json({ success: false, error: "ماه پرداخت نامعتبر است." }, { status: 400 });
+      add("p.month=?", monthNumber);
+    }
+
+    if (groupParam) add("CAST(p.job_group AS TEXT)=?", groupParam);
+
+    if (statusParam && statusParam !== "all") {
+      if (!["open", "closed"].includes(statusParam)) return NextResponse.json({ success: false, error: "وضعیت فیلتر نامعتبر است." }, { status: 400 });
+      add("pp.status=?", statusParam);
+    }
+
+    const whereSql = where.join(" AND ");
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total, COALESCE(SUM(p.net_salary),0) AS total_net
+       FROM payslips p
+       JOIN personnel e ON p.personnel_id=e.id
+       LEFT JOIN payroll_periods pp ON p.payroll_period_id=pp.id
+       WHERE ${whereSql}`,
+      values
+    );
+
+    const offset = (page - 1) * pageSize;
+    const limitIndex = values.length + 1;
+    const offsetIndex = values.length + 2;
+    const result = await pool.query(
+      `SELECT
+        p.id,p.personnel_id,p.year,p.month,p.job_group,p.work_days,p.net_salary,p.created_at,
+        e.full_name,e.personnel_code,pp.status AS period_status
+       FROM payslips p
+       JOIN personnel e ON p.personnel_id=e.id
+       LEFT JOIN payroll_periods pp ON p.payroll_period_id=pp.id
+       WHERE ${whereSql}
+       ORDER BY p.id DESC
+       LIMIT ${limitIndex} OFFSET ${offsetIndex}`,
+      [...values, pageSize, offset]
+    );
+
+    const total = Number(countResult.rows[0]?.total || 0);
+    return NextResponse.json({
+      success: true,
+      company: companyResult.rows[0],
+      data: result.rows,
+      meta: {
+        page,
+        page_size: pageSize,
+        total,
+        total_pages: Math.max(1, Math.ceil(total / pageSize)),
+        total_net: countResult.rows[0]?.total_net || 0,
+      },
+    });
   } catch (error) { console.error("GET payslips error:", error); return NextResponse.json({ success: false, error: "خطا در دریافت فیش‌ها" }, { status: 500 }); }
 }
 
