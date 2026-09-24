@@ -3,26 +3,19 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import CompanyWelcomeBanner from "./CompanyWelcomeBanner";
+import EmployeeBottomNav from "./EmployeeBottomNav";
 
 export default function EmployeeAuthenticatedShell({ children }) {
   const pathname = usePathname();
   const normalizedPathname = pathname?.replace(/\/+$/g, "") || "";
 
-  // The root employee URL is always the login landing page. Keep it completely
-  // outside the authenticated shell so an existing session can never add the
-  // welcome banner to the first screen.
+  // Keep the login landing page outside the authenticated shell.
   if (normalizedPathname === "/payslip") return children;
 
-  // The dashboard renders its own single welcome/header block. Do not mount
-  // the shared banner here or the employee sees the greeting twice.
-  if (normalizedPathname === "/payslip/dashboard") {
-    return <AuthenticatedEmployeeChrome showBanner={false}>{children}</AuthenticatedEmployeeChrome>;
-  }
-
-  return <AuthenticatedEmployeeChrome showBanner>{children}</AuthenticatedEmployeeChrome>;
+  return <AuthenticatedEmployeeChrome>{children}</AuthenticatedEmployeeChrome>;
 }
 
-function AuthenticatedEmployeeChrome({ children, showBanner }) {
+function AuthenticatedEmployeeChrome({ children }) {
   const [authenticated, setAuthenticated] = useState(false);
   const [checked, setChecked] = useState(false);
   const [employee, setEmployee] = useState(null);
@@ -49,7 +42,10 @@ function AuthenticatedEmployeeChrome({ children, showBanner }) {
         setEmployee(null);
         setChecked(true);
       });
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   if (!checked) return null;
@@ -57,8 +53,9 @@ function AuthenticatedEmployeeChrome({ children, showBanner }) {
 
   return (
     <>
-      {showBanner ? <CompanyWelcomeBanner employee={employee} /> : null}
-      <div className={showBanner ? "pt-20 sm:pt-24" : ""}>{children}</div>
+      <CompanyWelcomeBanner employee={employee} />
+      <div className="pb-24 pt-20 sm:pb-28 sm:pt-24 print:pb-0 print:pt-0">{children}</div>
+      <EmployeeBottomNav />
     </>
   );
 }
