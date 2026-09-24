@@ -40,13 +40,13 @@ export async function GET(request) {
 
     const where = ["e.company_id=$1"];
     const values = [companyId];
-    const add = (sql, value) => { values.push(value); where.push(sql.replace("?", `$\${values.length}`)); };
+    const add = (sql, value) => {
+      values.push(value);
+      const index = values.length;
+      where.push(sql.replaceAll("?", `$\${index}`));
+    };
 
     if (search) add("(e.full_name ILIKE ? OR e.personnel_code ILIKE ? OR CAST(p.id AS TEXT) ILIKE ?)", `%\${search}%`);
-    if (search) {
-      const n = values.length;
-      where[where.length - 1] = `(e.full_name ILIKE $\${n} OR e.personnel_code ILIKE $\${n} OR CAST(p.id AS TEXT) ILIKE $\${n})`;
-    }
 
     if (yearParam) {
       const year = Number(yearParam);
