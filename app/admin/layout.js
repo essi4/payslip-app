@@ -78,7 +78,7 @@ export default function AdminLayout({ children }) {
   return (
     <div dir="rtl" className="min-h-screen bg-slate-100 text-slate-800">
       <div className="flex min-h-screen">
-        <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 border-l border-slate-700 bg-slate-900 shadow-xl lg:block">
+        <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 flex-col border-l border-slate-700 bg-slate-900 shadow-xl lg:flex">
           <div className="flex h-20 items-center border-b border-slate-700 px-5">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-xl text-white shadow-lg">💼</div>
@@ -89,7 +89,7 @@ export default function AdminLayout({ children }) {
             </div>
           </div>
 
-          <nav className="px-3 py-5">
+          <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
             <div className="mb-3 px-3 text-[10px] font-bold text-slate-500">منوی اصلی</div>
             <div className="space-y-1.5">
               {menuItems.map((item) => {
@@ -113,7 +113,7 @@ export default function AdminLayout({ children }) {
             </div>
           </nav>
 
-          <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 p-4">
+          <div className="shrink-0 border-t border-slate-700 p-4">
             <div className="rounded-xl bg-slate-800 p-3">
               <div className="text-[11px] font-bold text-slate-400">وضعیت سامانه</div>
               <div className="mt-2 flex items-center gap-2">
