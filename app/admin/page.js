@@ -6,8 +6,6 @@ import {
   Users,
   FileText,
   Wallet,
-  BarChart3,
-  Settings,
   Wrench,
   RefreshCw,
   ArrowLeft,
