@@ -77,6 +77,7 @@ export async function GET(request) {
       values
     );
 
+    const total = Number(countResult.rows[0]?.total || 0);
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const safePage = Math.min(page, totalPages);
     const offset = (safePage - 1) * pageSize;
@@ -95,7 +96,6 @@ export async function GET(request) {
       [...values, pageSize, offset]
     );
 
-    const total = Number(countResult.rows[0]?.total || 0);
     return NextResponse.json({
       success: true,
       company: companyResult.rows[0],
