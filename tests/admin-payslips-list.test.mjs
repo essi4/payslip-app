@@ -6,8 +6,14 @@ const adminPage = fs.readFileSync(new URL("../app/admin/payslips/page.js", impor
 const api = fs.readFileSync(new URL("../app/api/payslips/route.js", import.meta.url), "utf8");
 const css = fs.readFileSync(new URL("../app/admin/payslips/payslips.css", import.meta.url), "utf8");
 
-test("admin payslip list is compact and month-first", () => {
-  assert.match(adminPage, /<th>#<\/th><th>کارمند<\/th><th>گروه<\/th><th>ماه پرداخت<\/th><th>روز کارکرد<\/th><th>خالص<\/th><th>عملیات<\/th>/);
+test("admin payslip list is compact and employee-card based", () => {
+  assert.match(adminPage, /payslip-list-grid/);
+  assert.match(adminPage, /payslip-card/);
+  assert.match(adminPage, /payslip-card-name/);
+  assert.match(adminPage, /حقوق پایه/);
+  assert.match(adminPage, /بیمه/);
+  assert.match(adminPage, /مالیات/);
+  assert.match(adminPage, /خالص/);
   assert.doesNotMatch(adminPage, /<th>حقوق پایه<\/th>/);
   assert.doesNotMatch(adminPage, /<th>بیمه<\/th>/);
   assert.doesNotMatch(adminPage, /<th>مالیات<\/th>/);
@@ -38,6 +44,7 @@ test("admin payslip list uses server pagination and loads full detail only for e
   assert.match(api, /const total = Number\(countResult\.rows\[0\]\?\.total \|\| 0\)/);
   assert.match(api, /const total = Number\(countResult\.rows\[0\]\?\.total \|\| 0\)[\s\S]*const totalPages =/);
   assert.match(api, /page: safePage/);
+  assert.match(api, /p\.base_salary,p\.insurance,p\.tax,p\.net_salary/);
   assert.match(api, /total_pages/);
 });
 
@@ -45,4 +52,10 @@ test("admin payslip list has responsive filter and pagination styles", () => {
   assert.match(css, /\.payslip-filter-grid/);
   assert.match(css, /\.payslip-pagination/);
   assert.match(css, /@media \(max-width:700px\)/);
+});
+
+test("admin payslip cards remain responsive", () => {
+  assert.match(css, /\.payslip-list-grid/);
+  assert.match(css, /\.payslip-card/);
+  assert.match(css, /grid-template-columns:1fr 1fr/);
 });

@@ -56,7 +56,20 @@ export default function PayslipsPage() {
       if (!response.ok || !result.success) throw new Error(result.error || "خطا در دریافت شرکت‌ها");
       const list = Array.isArray(result.data) ? result.data : [];
       setCompanies(list);
-      setCompanyId((current) => current && list.some((c) => String(c.id) === String(current)) ? current : list[0] ? String(list[0].id) : "");
+      const requestedCompanyId =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("company_id")
+          : "";
+      setCompanyId((current) => {
+        if (current && list.some((c) => String(c.id) === String(current))) return current;
+        if (
+          requestedCompanyId &&
+          list.some((c) => String(c.id) === String(requestedCompanyId))
+        ) {
+          return String(requestedCompanyId);
+        }
+        return list[0] ? String(list[0].id) : "";
+      });
     } catch (err) { setError(err.message || "خطا در دریافت شرکت‌ها"); }
     finally { setCompaniesLoading(false); }
   }
@@ -286,31 +299,42 @@ export default function PayslipsPage() {
           <span className="count-badge">{fa(payslipMeta.total)} فیش</span>
         </div>
         {error && <div style={{ margin: "0 20px 16px", padding: 12, borderRadius: 10, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}
-        <div className="table-wrapper">
-          <table className="payslip-list-table">
-            <thead><tr><th>#</th><th>کارمند</th><th>گروه</th><th>ماه پرداخت</th><th>روز کارکرد</th><th>خالص</th><th>عملیات</th></tr></thead>
-            <tbody>
-              {payslips.length === 0 ? (
-                <tr><td colSpan="7" className="empty-cell">برای این فیلتر فیشی پیدا نشد.</td></tr>
-              ) : payslips.map((p, index) => (
-                <tr key={p.id}>
-                  <td>{fa((payslipMeta.page - 1) * payslipMeta.page_size + index + 1)}</td>
-                  <td className="employee-name"><span>{p.full_name || "نامشخص"}</span>{p.personnel_code && <small className="employee-code">{p.personnel_code}</small>}</td>
-                  <td>{p.job_group || "---"}</td>
-                  <td><strong>{paymentMonth(p.month)} {formatYear(p.year)}</strong></td>
-                  <td>{fa(p.work_days)}</td>
-                  <td className="net-value">{fa(p.net_salary)} {DISPLAY_CURRENCY}</td>
-                  <td>
-                    <div className="payslip-actions">
-                      <a href={`/admin/payslips/${p.id}`} className="view-button">👁 مشاهده</a>
-                      <button type="button" title="ویرایش" aria-label="ویرایش" onClick={() => handleEdit(p)} className="action-edit">✏️</button>
-                      <button type="button" title="حذف" aria-label="حذف" onClick={() => handleDelete(p.id)} className="action-delete">🗑</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="payslip-list-grid">
+          {payslips.length === 0 ? (
+            <div className="payslip-list-empty">
+              برای این فیلتر فیشی پیدا نشد.
+            </div>
+          ) : payslips.map((p, index) => (
+            <article key={p.id} className="payslip-card">
+              <div className="payslip-card-top">
+                <div className="payslip-card-employee">
+                  <span className="payslip-card-index">{fa((payslipMeta.page - 1) * payslipMeta.page_size + index + 1)}</span>
+                  <div>
+                    <div className="payslip-card-name">{p.full_name || "نامشخص"}</div>
+                    {p.personnel_code && <div className="employee-code">{p.personnel_code}</div>}
+                  </div>
+                </div>
+                <div className="payslip-card-actions">
+                  <a href={`/admin/payslips/${p.id}`} className="view-button">👁 مشاهده</a>
+                  <button type="button" title="ویرایش" aria-label="ویرایش" onClick={() => handleEdit(p)} className="action-edit">✏️</button>
+                  <button type="button" title="حذف" aria-label="حذف" onClick={() => handleDelete(p.id)} className="action-delete">🗑</button>
+                </div>
+              </div>
+
+              <div className="payslip-card-meta">
+                <span>گروه {p.job_group || "---"}</span>
+                <span>{paymentMonth(p.month)} {formatYear(p.year)}</span>
+                <span>کارکرد {fa(p.work_days)} روز</span>
+              </div>
+
+              <div className="payslip-card-finance">
+                <div><span>حقوق پایه</span><strong>{fa(p.base_salary)} {DISPLAY_CURRENCY}</strong></div>
+                <div><span>بیمه</span><strong>{fa(p.insurance)} {DISPLAY_CURRENCY}</strong></div>
+                <div><span>مالیات</span><strong>{fa(p.tax)} {DISPLAY_CURRENCY}</strong></div>
+                <div className="payslip-card-net"><span>خالص</span><strong>{fa(p.net_salary)} {DISPLAY_CURRENCY}</strong></div>
+              </div>
+            </article>
+          ))}
         </div>
         {payslipMeta.total > 0 && (
           <div className="payslip-pagination">

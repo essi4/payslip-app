@@ -20,6 +20,23 @@ export async function GET(request) {
         COALESCE(SUM(net_salary), 0) AS total_net_salary
       FROM payslips
     `);
+    const companyFinancialResult = await pool.query(`
+      SELECT
+        c.id,
+        c.name,
+        COUNT(DISTINCT e.id)::int AS employees_count,
+        COUNT(p.id)::int AS payslips_count,
+        COALESCE(SUM(p.base_salary), 0) AS total_base_salary,
+        COALESCE(SUM(p.overtime + p.bonus + p.housing_allowance + p.food_allowance + p.marriage_allowance + p.child_allowance + p.other_benefits), 0) AS total_benefits,
+        COALESCE(SUM(p.insurance + p.tax + p.other_deductions), 0) AS total_deductions,
+        COALESCE(SUM(p.net_salary), 0) AS total_net_salary
+      FROM companies c
+      LEFT JOIN personnel e ON e.company_id = c.id
+      LEFT JOIN payslips p ON p.personnel_id = e.id
+      GROUP BY c.id, c.name
+      ORDER BY c.id ASC
+    `);
+
     const recentResult = await pool.query(`
       SELECT p.id, p.personnel_id, p.year, p.month, p.base_salary, p.net_salary, p.created_at,
         COALESCE(pe.full_name, '—') AS full_name,
@@ -44,6 +61,16 @@ export async function GET(request) {
         totalDeductions: Number(salary.total_deductions || 0),
         totalNetSalary: Number(salary.total_net_salary || 0),
         recentPayslips: recentResult.rows,
+        companyFinancials: companyFinancialResult.rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          employeesCount: Number(row.employees_count || 0),
+          payslipsCount: Number(row.payslips_count || 0),
+          totalBaseSalary: Number(row.total_base_salary || 0),
+          totalBenefits: Number(row.total_benefits || 0),
+          totalDeductions: Number(row.total_deductions || 0),
+          totalNetSalary: Number(row.total_net_salary || 0),
+        })),
       },
     });
   } catch (error) {

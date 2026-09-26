@@ -23,8 +23,21 @@ test("dashboard financial summary stays compact and links detailed reports", () 
   assert.match(page, /حقوق پایه/);
   assert.match(page, /مزایا/);
   assert.match(page, /کسورات/);
+  assert.match(page, /companyFinancials/);
+  assert.match(page, /خلاصه مالی و دسترسی سریع بر اساس شرکت/);
+  assert.match(page, /دسترسی سریع این شرکت/);
   assert.equal((page.match(/title: "تنظیمات"/g) || []).length, 0);
   assert.equal((page.match(/title: "گزارش‌ها"/g) || []).length, 0);
+});
+
+test("dashboard API exposes company-scoped financial summaries", () => {
+  assert.match(api, /companyFinancialResult = await pool\.query/);
+  assert.match(api, /GROUP BY c\.id, c\.name/);
+  assert.match(api, /companyFinancials: companyFinancialResult\.rows\.map/);
+  assert.match(api, /total_base_salary/);
+  assert.match(api, /total_benefits/);
+  assert.match(api, /total_deductions/);
+  assert.match(api, /total_net_salary/);
 });
 
 test("dashboard API exposes the company count used by the primary KPI", () => {
@@ -38,4 +51,10 @@ test("dashboard connection indicator reflects loading, error, and success states
   assert.match(page, /اتصال ناموفق/);
   assert.match(page, /اتصال برقرار است/);
   assert.match(page, /loading \? "bg-amber-400" : error \? "bg-rose-400" : "bg-emerald-400"/);
+});
+
+test("dashboard company quick links carry company context", () => {
+  assert.match(page, /\/admin\/employees\?company_id=\$\{company\.id\}/);
+  assert.match(page, /\/admin\/payslips\?company_id=\$\{company\.id\}/);
+  assert.match(page, /\/admin\/reports\?company_id=\$\{company\.id\}/);
 });
