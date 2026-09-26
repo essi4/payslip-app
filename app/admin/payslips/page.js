@@ -56,7 +56,20 @@ export default function PayslipsPage() {
       if (!response.ok || !result.success) throw new Error(result.error || "خطا در دریافت شرکت‌ها");
       const list = Array.isArray(result.data) ? result.data : [];
       setCompanies(list);
-      setCompanyId((current) => current && list.some((c) => String(c.id) === String(current)) ? current : list[0] ? String(list[0].id) : "");
+      const requestedCompanyId =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("company_id")
+          : "";
+      setCompanyId((current) => {
+        if (current && list.some((c) => String(c.id) === String(current))) return current;
+        if (
+          requestedCompanyId &&
+          list.some((c) => String(c.id) === String(requestedCompanyId))
+        ) {
+          return String(requestedCompanyId);
+        }
+        return list[0] ? String(list[0].id) : "";
+      });
     } catch (err) { setError(err.message || "خطا در دریافت شرکت‌ها"); }
     finally { setCompaniesLoading(false); }
   }
