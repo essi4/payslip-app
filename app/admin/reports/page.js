@@ -41,7 +41,16 @@ export default function ReportsPage() {
         const list = Array.isArray(result.data) ? result.data : [];
         setCompanies(list);
 
-        if (list.length > 0) {
+        const requestedCompanyId =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("company_id")
+            : "";
+        if (
+          requestedCompanyId &&
+          list.some((c) => String(c.id) === String(requestedCompanyId))
+        ) {
+          setCompanyId(String(requestedCompanyId));
+        } else if (list.length > 0) {
           setCompanyId(String(list[0].id));
         }
       } catch (err) {
