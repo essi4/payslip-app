@@ -6,7 +6,6 @@ import {
   Users,
   FileText,
   Wallet,
-  Wrench,
   RefreshCw,
   ArrowLeft,
   Building2,
@@ -111,33 +110,6 @@ export default function AdminPage() {
       description: "مجموع خالص فیش‌ها",
       icon: Wallet,
       link: "/admin/payslips",
-    },
-  ];
-
-  const quickLinks = [
-    {
-      title: "کارکنان",
-      description: "ثبت و مدیریت کارکنان",
-      icon: Users,
-      href: "/admin/employees",
-    },
-    {
-      title: "شرکت‌ها",
-      description: "ثبت و مدیریت شرکت‌ها",
-      icon: Building2,
-      href: "/admin/companies",
-    },
-    {
-      title: "فیش‌های حقوقی",
-      description: "ثبت و مدیریت فیش‌ها",
-      icon: FileText,
-      href: "/admin/payslips",
-    },
-    {
-      title: "اصلاحات",
-      description: "بررسی و اصلاح فیش‌ها",
-      icon: Wrench,
-      href: "/admin/corrections",
     },
   ];
 
@@ -310,13 +282,13 @@ export default function AdminPage() {
                 <div className="mt-4 border-t border-slate-100 pt-4">
                   <div className="text-[10px] font-black text-slate-500">دسترسی سریع این شرکت</div>
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    <Link href="/admin/employees" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
+                    <Link href={`/admin/employees?company_id=${company.id}`} className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
                       کارکنان
                     </Link>
-                    <Link href="/admin/payslips" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
+                    <Link href={`/admin/payslips?company_id=${company.id}`} className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
                       فیش‌های حقوقی
                     </Link>
-                    <Link href="/admin/reports" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
+                    <Link href={`/admin/reports?company_id=${company.id}`} className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
                       گزارش‌های مالی
                     </Link>
                     <Link href="/admin/corrections" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
