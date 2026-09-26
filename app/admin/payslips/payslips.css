@@ -168,3 +168,37 @@
 @media (max-width:380px) {
   .stats-grid { grid-template-columns:1fr; }
 }
+
+
+/* Compact payslip cards */
+.payslip-list-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:0 20px 20px; }
+.payslip-card { border:1px solid #e2e8f0; border-radius:15px; background:#fff; padding:14px; box-shadow:0 3px 12px rgba(15,23,42,.04); }
+.payslip-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.payslip-card-employee { min-width:0; display:flex; align-items:center; gap:10px; }
+.payslip-card-index { display:flex; align-items:center; justify-content:center; width:30px; height:30px; flex:0 0 auto; border-radius:9px; background:#f1f5f9; color:#475569; font-size:11px; font-weight:900; }
+.payslip-card-name { color:#0f172a; font-size:13px; font-weight:900; }
+.payslip-card-actions { display:flex; align-items:center; gap:5px; flex:0 0 auto; }
+.payslip-card-actions .view-button { display:inline-flex; align-items:center; justify-content:center; min-height:36px; border-radius:9px; padding:0 9px; background:#eff6ff; color:#1d4ed8; font-size:11px; font-weight:900; text-decoration:none; }
+.payslip-card-actions .action-edit, .payslip-card-actions .action-delete { min-width:36px; height:36px; border-radius:9px; }
+.payslip-card-meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:11px; }
+.payslip-card-meta span { border-radius:999px; background:#f8fafc; padding:5px 8px; color:#64748b; font-size:10px; font-weight:800; }
+.payslip-card-finance { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:11px; }
+.payslip-card-finance > div { min-width:0; border-radius:10px; background:#f8fafc; padding:8px; }
+.payslip-card-finance span { display:block; color:#64748b; font-size:9px; font-weight:700; }
+.payslip-card-finance strong { display:block; margin-top:3px; color:#0f172a; font-size:10px; font-weight:900; line-height:1.6; word-break:break-word; }
+.payslip-card-finance .payslip-card-net { background:#ecfdf5; }
+.payslip-card-finance .payslip-card-net span { color:#047857; }
+.payslip-card-finance .payslip-card-net strong { color:#047857; font-size:11px; }
+
+@media (max-width:900px) {
+  .payslip-list-grid { grid-template-columns:1fr; }
+}
+@media (max-width:700px) {
+  .payslip-list-grid { padding:0 12px 14px; gap:9px; }
+  .payslip-card { padding:11px; border-radius:13px; }
+  .payslip-card-top { gap:8px; }
+  .payslip-card-name { font-size:12px; }
+  .payslip-card-actions .view-button { min-height:34px; padding:0 7px; }
+  .payslip-card-actions .action-edit, .payslip-card-actions .action-delete { min-width:34px; height:34px; font-size:12px; }
+  .payslip-card-finance { grid-template-columns:1fr 1fr; }
+}
