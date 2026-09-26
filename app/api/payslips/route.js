@@ -85,7 +85,7 @@ export async function GET(request) {
     const offsetIndex = values.length + 2;
     const result = await pool.query(
       `SELECT
-        p.id,p.personnel_id,p.year,p.month,p.job_group,p.work_days,p.net_salary,p.created_at,
+        p.id,p.personnel_id,p.year,p.month,p.job_group,p.work_days,p.base_salary,p.insurance,p.tax,p.net_salary,p.created_at,
         e.full_name,e.personnel_code,pp.status AS period_status
        FROM payslips p
        JOIN personnel e ON p.personnel_id=e.id
