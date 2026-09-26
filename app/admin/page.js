@@ -30,6 +30,7 @@ export default function AdminPage() {
     totalDeductions: 0,
     totalNetSalary: 0,
   });
+  const [companyFinancials, setCompanyFinancials] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -64,6 +65,11 @@ export default function AdminPage() {
         totalDeductions: result.data?.totalDeductions || 0,
         totalNetSalary: result.data?.totalNetSalary || 0,
       });
+      setCompanyFinancials(
+        Array.isArray(result.data?.companyFinancials)
+          ? result.data.companyFinancials
+          : []
+      );
     } catch (err) {
       console.error(err);
       setError(err.message || "خطا در اتصال به سرور");
@@ -235,94 +241,96 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-sm font-black text-slate-900">
-              خلاصه مالی
-            </h2>
-            <p className="mt-1 text-[11px] text-slate-500">
-              فقط برای یک نگاه سریع؛ جزئیات کامل در گزارش‌هاست.
-            </p>
-          </div>
-
-          <Link
-            href="/admin/reports"
-            className="text-[11px] font-black text-slate-700 underline-offset-4 hover:underline"
-          >
-            مشاهده گزارش‌های مالی
-          </Link>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl bg-slate-50 px-4 py-3">
-            <div className="text-[10px] font-bold text-slate-500">
-              حقوق پایه
-            </div>
-            <div className="mt-1 text-sm font-black text-slate-900">
-              {loading ? "..." : money(data.totalBaseSalary)}
-            </div>
-          </div>
-
-          <div className="rounded-xl bg-slate-50 px-4 py-3">
-            <div className="text-[10px] font-bold text-slate-500">
-              مزایا
-            </div>
-            <div className="mt-1 text-sm font-black text-slate-900">
-              {loading ? "..." : money(data.totalBenefits)}
-            </div>
-          </div>
-
-          <div className="rounded-xl bg-slate-50 px-4 py-3">
-            <div className="text-[10px] font-bold text-slate-500">
-              کسورات
-            </div>
-            <div className="mt-1 text-sm font-black text-slate-900">
-              {loading ? "..." : money(data.totalDeductions)}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section>
         <div className="mb-3">
           <h2 className="text-sm font-black text-slate-900">
-            دسترسی سریع
+            خلاصه مالی و دسترسی سریع بر اساس شرکت
           </h2>
           <p className="mt-1 text-[11px] text-slate-500">
-            چهار کار پرکاربرد پنل
+            اطلاعات مالی و میانبرهای هر شرکت در کارت مستقل نمایش داده می‌شود.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {quickLinks.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md"
+        <div className="grid gap-4 xl:grid-cols-2">
+          {companyFinancials.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-slate-500 shadow-sm">
+              {loading ? "در حال دریافت اطلاعات شرکت‌ها..." : "شرکتی برای نمایش ثبت نشده است."}
+            </div>
+          ) : (
+            companyFinancials.map((company) => (
+              <section
+                key={company.id}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white">
-                    <Icon size={19} />
-                  </div>
-
-                  <div className="min-w-0">
-                    <h3 className="text-xs font-black text-slate-900">
-                      {item.title}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400">شرکت</div>
+                    <h3 className="mt-1 text-base font-black text-slate-900">
+                      {company.name}
                     </h3>
-                    <p className="mt-1 text-[10px] text-slate-500">
-                      {item.description}
-                    </p>
+                  </div>
+                  <div className="flex gap-2 text-[10px] font-bold text-slate-500">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1.5">
+                      {number(company.employeesCount)} پرسنل
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1.5">
+                      {number(company.payslipsCount)} فیش
+                    </span>
                   </div>
                 </div>
-              </Link>
-            );
-          })}
+
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="rounded-xl bg-slate-50 px-3 py-3">
+                    <div className="text-[10px] font-bold text-slate-500">حقوق پایه</div>
+                    <div className="mt-1 text-sm font-black text-slate-900">
+                      {money(company.totalBaseSalary)}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 px-3 py-3">
+                    <div className="text-[10px] font-bold text-slate-500">مزایا</div>
+                    <div className="mt-1 text-sm font-black text-slate-900">
+                      {money(company.totalBenefits)}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 px-3 py-3">
+                    <div className="text-[10px] font-bold text-slate-500">کسورات</div>
+                    <div className="mt-1 text-sm font-black text-slate-900">
+                      {money(company.totalDeductions)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-3">
+                  <div className="text-[10px] font-bold text-indigo-700">خالص پرداختی</div>
+                  <div className="mt-1 text-sm font-black text-indigo-900">
+                    {money(company.totalNetSalary)}
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                  <div className="text-[10px] font-black text-slate-500">دسترسی سریع این شرکت</div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <Link href="/admin/employees" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
+                      کارکنان
+                    </Link>
+                    <Link href="/admin/payslips" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
+                      فیش‌های حقوقی
+                    </Link>
+                    <Link href="/admin/reports" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
+                      گزارش‌های مالی
+                    </Link>
+                    <Link href="/admin/corrections" className="rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] font-black text-slate-700 transition hover:bg-slate-100">
+                      اصلاحات فیش
+                    </Link>
+                  </div>
+                </div>
+              </section>
+            ))
+          )}
         </div>
       </section>
+
+
     </div>
   );
 }
